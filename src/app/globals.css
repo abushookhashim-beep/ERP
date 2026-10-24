@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+/* ألوان الهوية — عدّلها هنا لتتغير في كل النظام */
+:root {
+  --brand: #0f6b5c;
+  --brand-hover: #0b5246;
+  --brand-soft: #e6f2ef;
+  --accent: #b8913a;
+  --background: #f5f7f6;
+  --surface: #ffffff;
+  --foreground: #1c2523;
+  --muted: #64716e;
+  --border: #e1e7e5;
+  --danger: #b42318;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --brand: #3fb59f;
+    --brand-hover: #5cc8b3;
+    --brand-soft: #16302b;
+    --accent: #d4af5a;
+    --background: #0f1514;
+    --surface: #172120;
+    --foreground: #e6ecea;
+    --muted: #93a29e;
+    --border: #26332f;
+    --danger: #f97066;
+  }
+}
+
+@theme inline {
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-soft: var(--brand-soft);
+  --color-accent: var(--accent);
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-arabic);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+@layer components {
+  .input {
+    @apply w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-hover disabled:opacity-60;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-border px-3 py-1.5 text-sm transition hover:bg-brand-soft;
+  }
+  .card {
+    @apply rounded-xl border border-border bg-surface p-5;
+  }
+  .label {
+    @apply mb-1 block text-sm font-medium;
+  }
+}

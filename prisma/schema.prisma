@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN     // مدير النظام
+  EXECUTIVE // الإدارة العليا
+  HR        // الموارد البشرية
+  FINANCE   // المالية
+  EMPLOYEE  // موظف
+}
+
+model Department {
+  id        String       @id @default(cuid())
+  name      String       @unique
+  parentId  String?
+  parent    Department?  @relation("DepartmentTree", fields: [parentId], references: [id])
+  children  Department[] @relation("DepartmentTree")
+  headId    String?      @unique
+  head      User?        @relation("DepartmentHead", fields: [headId], references: [id])
+  members   User[]       @relation("DepartmentMembers")
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+model User {
+  id             String      @id @default(cuid())
+  employeeNo     String      @unique
+  name           String
+  email          String      @unique
+  passwordHash   String
+  role           Role        @default(EMPLOYEE)
+  jobTitle       String?
+  phone          String?
+  active         Boolean     @default(true)
+  departmentId   String?
+  department     Department? @relation("DepartmentMembers", fields: [departmentId], references: [id])
+  managerId      String?
+  manager        User?       @relation("ReportingLine", fields: [managerId], references: [id])
+  reports        User[]      @relation("ReportingLine")
+  headOf         Department? @relation("DepartmentHead")
+  lastLoginAt    DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}

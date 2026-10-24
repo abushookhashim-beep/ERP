@@ -1,0 +1,56 @@
+"use client";
+
+import { useActionState, useEffect, useRef } from "react";
+import { createUser } from "./actions";
+import { t } from "@/i18n";
+
+type Option = { id: string; name: string };
+
+export function UserForm({ departments, users }: { departments: Option[]; users: Option[] }) {
+  const [state, action, pending] = useActionState(createUser, undefined);
+  const form = useRef<HTMLFormElement>(null);
+  useEffect(() => { if (state?.ok) form.current?.reset(); }, [state]);
+
+  return (
+    <form ref={form} action={action} className="card grid gap-4 md:grid-cols-4 md:items-end">
+      <Field name="employeeNo" label={t.users.employeeNo} required ltr />
+      <Field name="name" label={t.users.name} required />
+      <Field name="email" label={t.users.email} type="email" required ltr />
+      <Field name="password" label={t.users.password} type="password" required ltr />
+      <Field name="jobTitle" label={t.users.jobTitle} />
+      <div>
+        <label className="label" htmlFor="role">{t.users.role}</label>
+        <select id="role" name="role" className="input" defaultValue="EMPLOYEE">
+          {Object.entries(t.roles).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        </select>
+      </div>
+      <div>
+        <label className="label" htmlFor="departmentId">{t.users.department}</label>
+        <select id="departmentId" name="departmentId" className="input">
+          <option value="">{t.common.none}</option>
+          {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+        </select>
+      </div>
+      <div>
+        <label className="label" htmlFor="managerId">{t.users.manager}</label>
+        <select id="managerId" name="managerId" className="input">
+          <option value="">{t.common.none}</option>
+          {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+        </select>
+      </div>
+      <button className="btn md:col-start-4" disabled={pending}>{t.users.add}</button>
+      {state?.error && <p className="text-sm text-danger md:col-span-4">{state.error}</p>}
+    </form>
+  );
+}
+
+function Field({ name, label, type = "text", required, ltr }: {
+  name: string; label: string; type?: string; required?: boolean; ltr?: boolean;
+}) {
+  return (
+    <div>
+      <label className="label" htmlFor={name}>{label}</label>
+      <input id={name} name={name} type={type} required={required} dir={ltr ? "ltr" : undefined} className="input" />
+    </div>
+  );
+}
