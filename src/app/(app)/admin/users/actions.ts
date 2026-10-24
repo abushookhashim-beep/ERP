@@ -6,7 +6,7 @@ import { z } from "zod";
 import { Role } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
-import { type FormState, isUniqueViolation, optional } from "@/lib/form";
+import { type FormState, isForeignKeyViolation, isUniqueViolation, optional } from "@/lib/form";
 import { t } from "@/i18n";
 
 const schema = z.object({
@@ -48,4 +48,18 @@ export async function toggleUserActive(formData: FormData) {
   const user = await db.user.findUniqueOrThrow({ where: { id } });
   await db.user.update({ where: { id }, data: { active: !user.active } });
   revalidatePath("/admin/users");
+}
+
+export async function deleteUser(id: string): Promise<FormState> {
+  const admin = await requireRole("ADMIN");
+  if (id === admin.id) return; // لا يمكن للمدير حذف حسابه
+  try {
+    // من كان هذا المستخدم مديره المباشر أو مدير إدارته يصبح بلا مدير
+    await db.user.delete({ where: { id } });
+  } catch (e) {
+    if (isForeignKeyViolation(e)) return { error: t.users.hasHistory };
+    throw e;
+  }
+  revalidatePath("/admin/users");
+  return { ok: true };
 }

@@ -11,3 +11,7 @@ export function optional(value: FormDataEntryValue | null) {
 export function isUniqueViolation(e: unknown) {
   return e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002";
 }
+
+export function isForeignKeyViolation(e: unknown) {
+  return e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2003";
+}

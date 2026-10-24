@@ -48,6 +48,7 @@ export const ar = {
     inactive: "موقوف",
     activate: "تفعيل",
     deactivate: "إيقاف",
+    delete: "حذف",
     required: "هذا الحقل مطلوب",
   },
   users: {
@@ -64,6 +65,8 @@ export const ar = {
     status: "الحالة",
     duplicate: "الرقم الوظيفي أو البريد مستخدم مسبقاً",
     passwordShort: "كلمة المرور يجب ألا تقل عن 8 أحرف",
+    confirmDelete: "هل أنت متأكد من حذف هذا المستخدم نهائياً؟",
+    hasHistory: "لا يمكن حذف مستخدم له سجلات في النظام، استخدم «إيقاف» بدلاً من ذلك",
   },
   departments: {
     title: "الإدارات",

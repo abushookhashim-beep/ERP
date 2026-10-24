@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
 import { t } from "@/i18n";
 import { toggleUserActive } from "./actions";
+import { DeleteUserButton } from "./delete-button";
 import { UserForm } from "./form";
 
 export default async function UsersPage() {
@@ -44,10 +45,13 @@ export default async function UsersPage() {
                 </td>
                 <td className="p-3">
                   {u.id !== admin.id && (
-                    <form action={toggleUserActive}>
-                      <input type="hidden" name="id" value={u.id} />
-                      <button className="btn-ghost text-xs">{u.active ? t.common.deactivate : t.common.activate}</button>
-                    </form>
+                    <div className="flex gap-2">
+                      <form action={toggleUserActive}>
+                        <input type="hidden" name="id" value={u.id} />
+                        <button className="btn-ghost text-xs">{u.active ? t.common.deactivate : t.common.activate}</button>
+                      </form>
+                      <DeleteUserButton id={u.id} />
+                    </div>
                   )}
                 </td>
               </tr>
