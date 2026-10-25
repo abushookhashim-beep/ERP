@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CheckCircle2, Circle, Clock, MinusCircle, XCircle } from "lucide-react";
+import { CheckCircle2, Circle, Clock, MinusCircle, Printer, XCircle } from "lucide-react";
 import type { StepStatus } from "@prisma/client";
-import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { formatDate, formatDateTime } from "@/lib/format";
-import { ALL_REQUESTS_ROLES, canActOnStep, formatRequestNumber } from "@/lib/requests";
+import { formatRequestNumber } from "@/lib/requests";
+import { getVisibleRequest } from "@/lib/request-view";
 import { StatusBadge } from "@/components/requests/status-badge";
 import { t } from "@/i18n";
 import { ActionPanel } from "./action-panel";
@@ -19,37 +19,14 @@ const STEP_ICONS: Record<StepStatus, { icon: typeof Circle; className: string }>
   SKIPPED: { icon: MinusCircle, className: "text-muted" },
 };
 
-type Details = {
-  addressedTo?: string; bankName?: string; iban?: string;
-  pledgeTitle?: string; pledgeBody?: string; items?: string[];
-};
 
 export default async function RequestPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
   const { id } = await params;
-  const request = await db.request.findUnique({
-    where: { id },
-    include: {
-      subject: { select: { name: true, employeeNo: true, jobTitle: true, department: { select: { name: true } } } },
-      createdBy: { select: { name: true } },
-      steps: {
-        orderBy: { order: "asc" },
-        include: { approver: { select: { name: true } }, actedBy: { select: { name: true } } },
-      },
-    },
-  });
-  if (!request) notFound();
+  const view = await getVisibleRequest(id, user);
+  if (!view) notFound();
+  const { request, canAct, details } = view;
 
-  const involved =
-    request.subjectId === user.id ||
-    request.createdById === user.id ||
-    request.steps.some((s) => s.approverId === user.id) ||
-    ALL_REQUESTS_ROLES.includes(user.role);
-  const currentStep = request.steps.find((s) => s.status === "PENDING");
-  const canAct = request.status === "PENDING" && !!currentStep && canActOnStep(currentStep, user, request.subjectId);
-  if (!involved && !canAct) notFound();
-
-  const details = request.details as Details;
   const isPledge = request.type === "PLEDGE";
   const subtypeLabel = t.requests.subtypes[request.subtype as keyof typeof t.requests.subtypes];
   const canCancel = request.status === "PENDING" && request.createdById === user.id;
@@ -80,6 +57,9 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
           <h1 className="text-2xl font-semibold">{subtypeLabel}</h1>
           <StatusBadge status={request.status} type={request.type} />
           <span className="text-sm text-muted" dir="ltr">{formatRequestNumber(request.number)}</span>
+          <Link href={`/print/requests/${request.id}?auto=1`} target="_blank" className="btn-ghost ms-auto">
+            <Printer size={16} />{t.requests.print}
+          </Link>
         </div>
       </div>
 

@@ -65,3 +65,18 @@ body {
     @apply mb-1 block text-sm font-medium;
   }
 }
+
+@page {
+  size: A4;
+  margin: 14mm;
+}
+
+@media print {
+  body {
+    background: #fff;
+  }
+  .print-doc {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
