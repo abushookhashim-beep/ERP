@@ -56,7 +56,10 @@ export function Sidebar({ user }: Props) {
         <div className="flex h-full flex-col">
           <div className="flex items-center gap-2 border-b border-border px-5 py-4">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-sm font-bold text-white">ERP</div>
-            <span className="text-sm font-semibold">{t.appName}</span>
+            <div>
+              <p className="text-sm font-semibold">{t.appName}</p>
+              <p className="text-xs text-muted">{t.appTagline}</p>
+            </div>
           </div>
 
           <nav className="flex-1 space-y-1 overflow-y-auto p-3">

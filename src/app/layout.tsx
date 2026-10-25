@@ -10,7 +10,7 @@ const arabic = IBM_Plex_Sans_Arabic({
 });
 
 export const metadata: Metadata = {
-  title: t.appName,
+  title: `${t.appName} | ${t.appTagline}`,
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

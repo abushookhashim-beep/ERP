@@ -4,7 +4,7 @@ import { useActionState, useEffect, useRef } from "react";
 import { createDepartment } from "./actions";
 import { t } from "@/i18n";
 
-type Option = { id: string; name: string };
+type Option = { id: string; name: string; depth?: number };
 
 export function DepartmentForm({ departments, users }: { departments: Option[]; users: Option[] }) {
   const [state, action, pending] = useActionState(createDepartment, undefined);
@@ -21,7 +21,7 @@ export function DepartmentForm({ departments, users }: { departments: Option[]; 
         <label className="label" htmlFor="parentId">{t.departments.parent}</label>
         <select id="parentId" name="parentId" className="input">
           <option value="">{t.common.none}</option>
-          {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+          {departments.map((d) => <option key={d.id} value={d.id}>{"\u00A0\u00A0".repeat(d.depth ?? 0)}{d.name}</option>)}
         </select>
       </div>
       <div>

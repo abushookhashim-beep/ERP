@@ -15,7 +15,8 @@ export default function LoginPage() {
             ERP
           </div>
           <h1 className="text-xl font-semibold">{t.appName}</h1>
-          <p className="mt-1 text-sm text-muted">{t.login.subtitle}</p>
+          <p className="text-sm text-muted">{t.appTagline}</p>
+          <p className="mt-3 text-sm text-muted">{t.login.subtitle}</p>
         </div>
 
         <form action={action} className="card space-y-4">

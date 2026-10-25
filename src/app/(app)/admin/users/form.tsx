@@ -4,7 +4,7 @@ import { useActionState, useEffect, useRef } from "react";
 import { createUser } from "./actions";
 import { t } from "@/i18n";
 
-type Option = { id: string; name: string };
+type Option = { id: string; name: string; depth?: number };
 
 export function UserForm({ departments, users }: { departments: Option[]; users: Option[] }) {
   const [state, action, pending] = useActionState(createUser, undefined);
@@ -28,7 +28,7 @@ export function UserForm({ departments, users }: { departments: Option[]; users:
         <label className="label" htmlFor="departmentId">{t.users.department}</label>
         <select id="departmentId" name="departmentId" className="input">
           <option value="">{t.common.none}</option>
-          {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+          {departments.map((d) => <option key={d.id} value={d.id}>{"\u00A0\u00A0".repeat(d.depth ?? 0)}{d.name}</option>)}
         </select>
       </div>
       <div>

@@ -2,9 +2,9 @@
 
 /* ألوان الهوية — عدّلها هنا لتتغير في كل النظام */
 :root {
-  --brand: #0f6b5c;
-  --brand-hover: #0b5246;
-  --brand-soft: #e6f2ef;
+  --brand: #1f8f3a;
+  --brand-hover: #18742f;
+  --brand-soft: #e8f5eb;
   --accent: #b8913a;
   --background: #f5f7f6;
   --surface: #ffffff;
@@ -16,9 +16,9 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --brand: #3fb59f;
-    --brand-hover: #5cc8b3;
-    --brand-soft: #16302b;
+    --brand: #4cc36a;
+    --brand-hover: #6fd389;
+    --brand-soft: #15301d;
     --accent: #d4af5a;
     --background: #0f1514;
     --surface: #172120;

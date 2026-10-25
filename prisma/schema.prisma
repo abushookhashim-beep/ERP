@@ -18,6 +18,7 @@ enum Role {
 model Department {
   id        String       @id @default(cuid())
   name      String       @unique
+  sortOrder Int          @default(0)
   parentId  String?
   parent    Department?  @relation("DepartmentTree", fields: [parentId], references: [id])
   children  Department[] @relation("DepartmentTree")

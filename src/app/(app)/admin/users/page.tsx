@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
+import { toTree } from "@/lib/departments";
 import { t } from "@/i18n";
 import { toggleUserActive } from "./actions";
 import { DeleteUserButton } from "./delete-button";
@@ -9,14 +10,14 @@ export default async function UsersPage() {
   const admin = await requireRole("ADMIN");
   const [users, departments] = await Promise.all([
     db.user.findMany({ orderBy: { employeeNo: "asc" }, include: { department: true, manager: true } }),
-    db.department.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+    db.department.findMany({ select: { id: true, name: true, parentId: true, sortOrder: true } }),
   ]);
   const activeUsers = users.filter((u) => u.active).map(({ id, name }) => ({ id, name }));
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">{t.users.title}</h1>
-      <UserForm departments={departments} users={activeUsers} />
+      <UserForm departments={toTree(departments).map(({ id, name, depth }) => ({ id, name, depth }))} users={activeUsers} />
       <div className="card overflow-x-auto p-0">
         <table className="w-full text-sm">
           <thead className="border-b border-border text-muted">
