@@ -2,6 +2,7 @@
 
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import { Role } from "@prisma/client";
 import { db } from "@/lib/db";
@@ -39,6 +40,58 @@ export async function createUser(_: FormState, formData: FormData): Promise<Form
   }
   revalidatePath("/admin/users");
   return { ok: true };
+}
+
+const updateSchema = schema.omit({ password: true }).extend({
+  password: z.union([z.literal(""), z.string().min(8, t.users.passwordShort)]),
+});
+
+export async function updateUser(id: string, _: FormState, formData: FormData): Promise<FormState> {
+  const admin = await requireRole("ADMIN");
+  const parsed = updateSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { password, ...data } = parsed.data;
+  const active = formData.get("active") === "on";
+  if (id === admin.id && (data.role !== "ADMIN" || !active)) return { error: t.users.cannotDemoteSelf };
+
+  const managerId = optional(formData.get("managerId"));
+  if (managerId && (await reportsTo(managerId, id))) return { error: t.users.invalidManager };
+
+  try {
+    await db.user.update({
+      where: { id },
+      data: {
+        ...data,
+        active,
+        jobTitle: optional(formData.get("jobTitle")),
+        phone: optional(formData.get("phone")),
+        departmentId: optional(formData.get("departmentId")),
+        managerId,
+        ...(password && { passwordHash: await bcrypt.hash(password, 10) }),
+      },
+    });
+  } catch (e) {
+    if (isUniqueViolation(e)) return { error: t.users.duplicate };
+    throw e;
+  }
+  revalidatePath("/admin/users");
+  redirect("/admin/users");
+}
+
+/** هل userId هو نفسه targetId أو يتبع له في سلسلة الإدارة؟ */
+async function reportsTo(userId: string, targetId: string) {
+  const seen = new Set<string>();
+  let current: string | null = userId;
+  while (current && !seen.has(current)) {
+    if (current === targetId) return true;
+    seen.add(current);
+    const next: { managerId: string | null } | null = await db.user.findUnique({
+      where: { id: current },
+      select: { managerId: true },
+    });
+    current = next?.managerId ?? null;
+  }
+  return false;
 }
 
 export async function toggleUserActive(formData: FormData) {

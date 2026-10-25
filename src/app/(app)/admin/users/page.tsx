@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
 import { toTree } from "@/lib/departments";
@@ -45,15 +46,18 @@ export default async function UsersPage() {
                   </span>
                 </td>
                 <td className="p-3">
-                  {u.id !== admin.id && (
-                    <div className="flex gap-2">
-                      <form action={toggleUserActive}>
-                        <input type="hidden" name="id" value={u.id} />
-                        <button className="btn-ghost text-xs">{u.active ? t.common.deactivate : t.common.activate}</button>
-                      </form>
-                      <DeleteUserButton id={u.id} />
-                    </div>
-                  )}
+                  <div className="flex gap-2">
+                    <Link href={`/admin/users/${u.id}`} className="btn-ghost text-xs">{t.common.edit}</Link>
+                    {u.id !== admin.id && (
+                      <>
+                        <form action={toggleUserActive}>
+                          <input type="hidden" name="id" value={u.id} />
+                          <button className="btn-ghost text-xs">{u.active ? t.common.deactivate : t.common.activate}</button>
+                        </form>
+                        <DeleteUserButton id={u.id} />
+                      </>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
