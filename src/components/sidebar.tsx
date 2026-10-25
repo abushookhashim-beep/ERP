@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
-  Building2, CalendarDays, CheckSquare, FileText, Home, LogOut, Megaphone, Menu,
+  Building2, CalendarDays, CheckSquare, FileText, Home, KeyRound, LogOut, Megaphone, Menu,
   Users, Wallet, X, Briefcase,
 } from "lucide-react";
 import type { Role } from "@prisma/client";
@@ -77,6 +77,10 @@ export function Sidebar({ user }: Props) {
               <p className="text-sm font-medium">{user.name}</p>
               <p className="text-xs text-muted">{user.jobTitle ?? t.roles[user.role]}</p>
             </div>
+            <Link href="/change-password" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-brand-soft">
+              <KeyRound size={18} />
+              {t.changePassword.nav}
+            </Link>
             <form action={logout}>
               <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-danger hover:bg-brand-soft">
                 <LogOut size={18} />

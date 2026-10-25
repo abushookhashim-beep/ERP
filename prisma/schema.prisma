@@ -35,6 +35,8 @@ model User {
   name           String
   email          String      @unique
   passwordHash   String
+  // يُلزم المستخدم بتغيير كلمة المرور عند الدخول (حساب جديد أو كلمة مرور أعاد المدير تعيينها)
+  mustChangePassword Boolean @default(true)
   role           Role        @default(EMPLOYEE)
   jobTitle       String?
   phone          String?

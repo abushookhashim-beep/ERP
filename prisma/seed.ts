@@ -32,6 +32,7 @@ async function main() {
       email,
       passwordHash: await bcrypt.hash(password, 10),
       role: "ADMIN",
+      mustChangePassword: false,
       jobTitle: "مدير النظام",
       departmentId: it.id,
     },

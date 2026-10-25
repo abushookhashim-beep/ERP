@@ -67,7 +67,7 @@ export async function updateUser(id: string, _: FormState, formData: FormData): 
         phone: optional(formData.get("phone")),
         departmentId: optional(formData.get("departmentId")),
         managerId,
-        ...(password && { passwordHash: await bcrypt.hash(password, 10) }),
+        ...(password && { passwordHash: await bcrypt.hash(password, 10), mustChangePassword: true }),
       },
     });
   } catch (e) {

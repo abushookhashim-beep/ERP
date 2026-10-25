@@ -18,12 +18,16 @@ const WIDGETS = [
   { title: t.home.todayMeetings, icon: CalendarDays },
 ];
 
-export default async function HomePage() {
+export default async function HomePage({ searchParams }: { searchParams: Promise<{ passwordChanged?: string }> }) {
   const user = await requireUser();
+  const { passwordChanged } = await searchParams;
   const today = new Intl.DateTimeFormat("ar-SA", { dateStyle: "full" }).format(new Date());
 
   return (
     <div className="space-y-8">
+      {passwordChanged && (
+        <p className="rounded-lg bg-brand-soft p-3 text-sm text-brand" role="status">{t.changePassword.success}</p>
+      )}
       <div>
         <h1 className="text-2xl font-semibold">{t.home.greeting}، {user.name.split(" ")[0]} 👋</h1>
         <p className="mt-1 text-sm text-muted">{today}</p>
