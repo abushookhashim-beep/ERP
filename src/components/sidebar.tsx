@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
   Building2, CalendarDays, CheckSquare, FileText, Home, KeyRound, LogOut, Megaphone, Menu,
-  Users, Wallet, X, Briefcase,
+  Users, Wallet, X, Briefcase, Workflow,
 } from "lucide-react";
 import type { Role } from "@prisma/client";
 import { logout } from "@/app/login/actions";
@@ -24,11 +24,12 @@ const NAV = [
 const ADMIN_NAV = [
   { href: "/admin/users", label: t.nav.users, icon: Users },
   { href: "/admin/departments", label: t.nav.departments, icon: Building2 },
+  { href: "/admin/approval-settings", label: t.nav.approvalSettings, icon: Workflow },
 ];
 
-type Props = { user: { name: string; role: Role; jobTitle: string | null } };
+type Props = { user: { name: string; role: Role; jobTitle: string | null }; pendingApprovals: number };
 
-export function Sidebar({ user }: Props) {
+export function Sidebar({ user, pendingApprovals }: Props) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -40,6 +41,9 @@ export function Sidebar({ user }: Props) {
       }`}>
       <item.icon size={18} />
       {item.label}
+      {item.href === "/approvals" && pendingApprovals > 0 && (
+        <span className="ms-auto rounded-full bg-accent px-2 text-xs font-semibold text-white">{pendingApprovals}</span>
+      )}
     </Link>
   );
 

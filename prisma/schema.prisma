@@ -8,11 +8,40 @@ datasource db {
 }
 
 enum Role {
-  ADMIN     // مدير النظام
+  ADMIN // مدير النظام
   EXECUTIVE // الإدارة العليا
-  HR        // الموارد البشرية
-  FINANCE   // المالية
-  EMPLOYEE  // موظف
+  HR // الموارد البشرية
+  FINANCE // المالية
+  IT // تقنية المعلومات
+  EMPLOYEE // موظف
+}
+
+enum RequestType {
+  LEAVE // إجازة
+  LETTER // خطاب
+  PLEDGE // تعهد أو استلام عهدة (ترسله الموارد البشرية أو التقنية للموظف)
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum ApproverKind {
+  MANAGER // المدير المباشر
+  HR // أي موظف بصلاحية الموارد البشرية
+  CEO // الرئيس التنفيذي (من إعدادات التعميد)
+  EMPLOYEE // الموظف نفسه (إقرار التعهد)
+}
+
+enum StepStatus {
+  WAITING // لم يصل دوره بعد
+  PENDING // بانتظار الإجراء
+  APPROVED
+  REJECTED
+  SKIPPED // تخطي تلقائي (لا يوجد مدير، أو المعتمد هو مقدم الطلب)
 }
 
 model Department {
@@ -30,24 +59,77 @@ model Department {
 }
 
 model User {
-  id             String      @id @default(cuid())
-  employeeNo     String      @unique
-  name           String
-  email          String      @unique
-  passwordHash   String
+  id                 String         @id @default(cuid())
+  employeeNo         String         @unique
+  name               String
+  email              String         @unique
+  passwordHash       String
   // يُلزم المستخدم بتغيير كلمة المرور عند الدخول (حساب جديد أو كلمة مرور أعاد المدير تعيينها)
-  mustChangePassword Boolean @default(true)
-  role           Role        @default(EMPLOYEE)
-  jobTitle       String?
-  phone          String?
-  active         Boolean     @default(true)
-  departmentId   String?
-  department     Department? @relation("DepartmentMembers", fields: [departmentId], references: [id])
-  managerId      String?
-  manager        User?       @relation("ReportingLine", fields: [managerId], references: [id])
-  reports        User[]      @relation("ReportingLine")
-  headOf         Department? @relation("DepartmentHead")
-  lastLoginAt    DateTime?
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  mustChangePassword Boolean        @default(true)
+  role               Role           @default(EMPLOYEE)
+  jobTitle           String?
+  phone              String?
+  active             Boolean        @default(true)
+  departmentId       String?
+  department         Department?    @relation("DepartmentMembers", fields: [departmentId], references: [id])
+  managerId          String?
+  manager            User?          @relation("ReportingLine", fields: [managerId], references: [id])
+  reports            User[]         @relation("ReportingLine")
+  headOf             Department?    @relation("DepartmentHead")
+  requests           Request[]      @relation("RequestSubject")
+  createdRequests    Request[]      @relation("RequestCreator")
+  approvalSteps      ApprovalStep[] @relation("StepApprover")
+  actedSteps         ApprovalStep[] @relation("StepActor")
+  lastLoginAt        DateTime?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+}
+
+model Request {
+  id          String         @id @default(cuid())
+  number      Int            @unique @default(autoincrement())
+  type        RequestType
+  subtype     String
+  status      RequestStatus  @default(PENDING)
+  // الموظف الذي يخصه الطلب (مقدم الإجازة، أو المرسَل إليه التعهد)
+  subjectId   String
+  subject     User           @relation("RequestSubject", fields: [subjectId], references: [id])
+  createdById String
+  createdBy   User           @relation("RequestCreator", fields: [createdById], references: [id])
+  startDate   DateTime?      @db.Date
+  endDate     DateTime?      @db.Date
+  days        Int?
+  details     Json           @default("{}")
+  notes       String?
+  steps       ApprovalStep[]
+  completedAt DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([subjectId])
+  @@index([status])
+}
+
+model ApprovalStep {
+  id         String       @id @default(cuid())
+  requestId  String
+  request    Request      @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  order      Int
+  kind       ApproverKind
+  // معتمد محدد؛ فارغ يعني أي موظف بصلاحية الموارد البشرية أو الإدارة العليا
+  approverId String?
+  approver   User?        @relation("StepApprover", fields: [approverId], references: [id])
+  status     StepStatus   @default(WAITING)
+  comment    String?
+  actedById  String?
+  actedBy    User?        @relation("StepActor", fields: [actedById], references: [id])
+  actedAt    DateTime?
+
+  @@unique([requestId, order])
+  @@index([approverId, status])
+}
+
+model Setting {
+  key   String @id
+  value String
 }
