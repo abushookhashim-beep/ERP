@@ -15,7 +15,7 @@ export default async function EditUserPage({ params }: { params: Promise<{ id: s
       where: { id },
       select: {
         id: true, employeeNo: true, name: true, email: true, role: true, active: true,
-        jobTitle: true, phone: true, departmentId: true, managerId: true,
+        jobTitle: true, phone: true, nationalId: true, departmentId: true, managerId: true,
       },
     }),
     db.department.findMany({ select: { id: true, name: true, parentId: true, sortOrder: true } }),

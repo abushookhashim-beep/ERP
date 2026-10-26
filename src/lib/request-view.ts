@@ -13,7 +13,7 @@ export async function getVisibleRequest(id: string, user: { id: string; role: Ro
   const request = await db.request.findUnique({
     where: { id },
     include: {
-      subject: { select: { name: true, employeeNo: true, jobTitle: true, department: { select: { name: true } } } },
+      subject: { select: { name: true, employeeNo: true, nationalId: true, jobTitle: true, department: { select: { name: true } } } },
       createdBy: { select: { name: true } },
       steps: {
         orderBy: { order: "asc" },

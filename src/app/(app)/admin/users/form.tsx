@@ -17,6 +17,8 @@ export function UserForm({ departments, users }: { departments: Option[]; users:
       <Field name="name" label={t.users.name} required />
       <Field name="email" label={t.users.email} type="email" required ltr />
       <Field name="password" label={t.users.password} type="password" required ltr />
+      <Field name="nationalId" label={t.users.nationalId} ltr inputMode="numeric" maxLength={10} />
+      <Field name="phone" label={t.users.phone} type="tel" ltr placeholder="05XXXXXXXX" />
       <Field name="jobTitle" label={t.users.jobTitle} />
       <div>
         <label className="label" htmlFor="role">{t.users.role}</label>
@@ -38,19 +40,19 @@ export function UserForm({ departments, users }: { departments: Option[]; users:
           {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
         </select>
       </div>
-      <button className="btn md:col-start-4" disabled={pending}>{t.users.add}</button>
+      <button className="btn md:col-start-4 md:row-start-3" disabled={pending}>{t.users.add}</button>
       {state?.error && <p className="text-sm text-danger md:col-span-4">{state.error}</p>}
     </form>
   );
 }
 
-function Field({ name, label, type = "text", required, ltr }: {
+function Field({ name, label, type = "text", required, ltr, ...rest }: {
   name: string; label: string; type?: string; required?: boolean; ltr?: boolean;
-}) {
+} & Pick<React.InputHTMLAttributes<HTMLInputElement>, "inputMode" | "maxLength" | "placeholder">) {
   return (
     <div>
       <label className="label" htmlFor={name}>{label}</label>
-      <input id={name} name={name} type={type} required={required} dir={ltr ? "ltr" : undefined} className="input" />
+      <input id={name} name={name} type={type} required={required} dir={ltr ? "ltr" : undefined} className="input" {...rest} />
     </div>
   );
 }

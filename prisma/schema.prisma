@@ -69,6 +69,8 @@ model User {
   role               Role           @default(EMPLOYEE)
   jobTitle           String?
   phone              String?
+  // رقم الهوية الوطنية أو الإقامة (10 أرقام)
+  nationalId         String?        @unique
   active             Boolean        @default(true)
   departmentId       String?
   department         Department?    @relation("DepartmentMembers", fields: [departmentId], references: [id])

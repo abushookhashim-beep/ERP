@@ -9,7 +9,7 @@ type Option = { id: string; name: string; depth?: number };
 type Props = {
   user: {
     id: string; employeeNo: string; name: string; email: string; role: Role; active: boolean;
-    jobTitle: string | null; phone: string | null; departmentId: string | null; managerId: string | null;
+    jobTitle: string | null; phone: string | null; nationalId: string | null; departmentId: string | null; managerId: string | null;
   };
   departments: Option[];
   managers: Option[];
@@ -24,7 +24,8 @@ export function EditUserForm({ user, departments, managers, isSelf }: Props) {
       <Field name="employeeNo" label={t.users.employeeNo} defaultValue={user.employeeNo} required ltr />
       <Field name="name" label={t.users.name} defaultValue={user.name} required />
       <Field name="email" label={t.users.email} type="email" defaultValue={user.email} required ltr />
-      <Field name="phone" label={t.users.phone} type="tel" defaultValue={user.phone} ltr />
+      <Field name="nationalId" label={t.users.nationalId} defaultValue={user.nationalId} ltr inputMode="numeric" maxLength={10} />
+      <Field name="phone" label={t.users.phone} type="tel" defaultValue={user.phone} ltr placeholder="05XXXXXXXX" />
       <Field name="jobTitle" label={t.users.jobTitle} defaultValue={user.jobTitle} />
       <div>
         <label className="label" htmlFor="role">{t.users.role}</label>
@@ -65,14 +66,14 @@ export function EditUserForm({ user, departments, managers, isSelf }: Props) {
   );
 }
 
-function Field({ name, label, type = "text", defaultValue, required, ltr }: {
+function Field({ name, label, type = "text", defaultValue, required, ltr, ...rest }: {
   name: string; label: string; type?: string; defaultValue?: string | null; required?: boolean; ltr?: boolean;
-}) {
+} & Pick<React.InputHTMLAttributes<HTMLInputElement>, "inputMode" | "maxLength" | "placeholder">) {
   return (
     <div>
       <label className="label" htmlFor={name}>{label}</label>
       <input id={name} name={name} type={type} required={required} defaultValue={defaultValue ?? undefined}
-        dir={ltr ? "ltr" : undefined} autoComplete={type === "password" ? "new-password" : undefined} className="input" />
+        dir={ltr ? "ltr" : undefined} autoComplete={type === "password" ? "new-password" : undefined} className="input" {...rest} />
     </div>
   );
 }

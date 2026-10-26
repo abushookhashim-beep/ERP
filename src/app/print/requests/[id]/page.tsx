@@ -73,6 +73,7 @@ export default async function PrintRequestPage({ params, searchParams }: Props) 
           <InfoGrid rows={[
             [t.users.name, request.subject.name],
             [t.users.employeeNo, request.subject.employeeNo],
+            [t.users.nationalId, request.subject.nationalId ?? t.common.none],
             [t.users.jobTitle, request.subject.jobTitle ?? t.common.none],
             [t.users.department, request.subject.department?.name ?? t.common.none],
           ]} />
@@ -81,7 +82,7 @@ export default async function PrintRequestPage({ params, searchParams }: Props) 
         {isPledge ? (
           <>
             <Section title={subtypeLabel(request.subtype)}>
-              <p className="mb-2 font-semibold">{doc.pledgeDeclaration(request.subject.name, request.subject.employeeNo)}</p>
+              <p className="mb-2 font-semibold">{doc.pledgeDeclaration(request.subject.name, request.subject.employeeNo, request.subject.nationalId)}</p>
               <p className="whitespace-pre-line leading-7">{details.pledgeBody}</p>
             </Section>
             {details.items && (

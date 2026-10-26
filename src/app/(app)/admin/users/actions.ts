@@ -10,12 +10,26 @@ import { requireRole } from "@/lib/auth";
 import { type FormState, isForeignKeyViolation, isUniqueViolation, optional } from "@/lib/form";
 import { t } from "@/i18n";
 
+// يحول الأرقام العربية (٠-٩) إلى إنجليزية ويحذف المسافات والشرطات
+const digits = (s: string) =>
+  s.replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d))).replace(/[\s-]/g, "");
+
+const nationalId = z.string().transform(digits)
+  .refine((v) => v === "" || /^[12]\d{9}$/.test(v), t.users.invalidNationalId)
+  .transform((v) => v || null);
+
+const phone = z.string().transform(digits)
+  .refine((v) => v === "" || /^(05\d{8}|\+?\d{9,15})$/.test(v), t.users.invalidPhone)
+  .transform((v) => v || null);
+
 const schema = z.object({
   employeeNo: z.string().trim().min(1, t.common.required),
   name: z.string().trim().min(1, t.common.required),
   email: z.string().trim().toLowerCase().email(),
   password: z.string().min(8, t.users.passwordShort),
   role: z.nativeEnum(Role),
+  nationalId,
+  phone,
 });
 
 export async function createUser(_: FormState, formData: FormData): Promise<FormState> {
@@ -64,7 +78,6 @@ export async function updateUser(id: string, _: FormState, formData: FormData): 
         ...data,
         active,
         jobTitle: optional(formData.get("jobTitle")),
-        phone: optional(formData.get("phone")),
         departmentId: optional(formData.get("departmentId")),
         managerId,
         ...(password && { passwordHash: await bcrypt.hash(password, 10), mustChangePassword: true }),
