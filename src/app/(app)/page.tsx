@@ -1,5 +1,5 @@
 import {
-  Building2, CalendarDays, CheckCircle2, CheckSquare, Clock, FileText, Megaphone, UserCheck, UserX, Users,
+  BellRing, Building2, CalendarDays, CheckCircle2, CheckSquare, Clock, FileText, Megaphone, UserCheck, UserX, Users,
 } from "lucide-react";
 import Link from "next/link";
 import type { Role } from "@prisma/client";
@@ -8,6 +8,9 @@ import { db } from "@/lib/db";
 import { formatDateTime } from "@/lib/format";
 import { actionableStepsWhere, formatRequestNumber } from "@/lib/requests";
 import { StatusBadge } from "@/components/requests/status-badge";
+import { LeaveBalanceCard } from "@/components/hr/leave-balance-card";
+import { alertCount, getHrAlerts } from "@/lib/hr-alerts";
+import { getAnnualBalance, getLeavePolicy } from "@/lib/leave";
 import { BarList } from "@/components/dashboard/bar-list";
 import { StatTile } from "@/components/dashboard/stat-tile";
 import { t } from "@/i18n";
@@ -22,7 +25,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const user = await requireUser();
   const { passwordChanged } = await searchParams;
   const today = new Intl.DateTimeFormat("ar-SA", { dateStyle: "full" }).format(new Date());
-  const [myRequests, approvals] = await Promise.all([
+  const policy = await getLeavePolicy();
+  const [myRequests, approvals, balance] = await Promise.all([
     db.request.findMany({
       where: { subjectId: user.id },
       orderBy: { createdAt: "desc" },
@@ -35,6 +39,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       take: WIDGET_LIMIT,
       select: { id: true, request: { select: { id: true, subtype: true, createdAt: true, subject: { select: { name: true } } } } },
     }),
+    db.employeeProfile.findUnique({ where: { userId: user.id } }).then((p) => getAnnualBalance(user.id, p, policy)),
   ]);
 
   return (
@@ -47,7 +52,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         <p className="mt-1 text-sm text-muted">{today}</p>
       </div>
 
-      {DASHBOARD_ROLES.includes(user.role) && <Dashboard />}
+      {DASHBOARD_ROLES.includes(user.role) && <Dashboard alertDays={policy.alertDays} />}
 
       <div className="grid gap-4 md:grid-cols-2">
         <Widget title={t.home.myRequests} icon={FileText} href="/requests">
@@ -73,6 +78,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
             </li>
           ))}
         </Widget>
+        <LeaveBalanceCard balance={balance} />
         <Widget title={t.home.latestCirculars} icon={Megaphone} />
         <Widget title={t.home.todayMeetings} icon={CalendarDays} />
       </div>
@@ -99,8 +105,8 @@ function Widget({ title, icon: Icon, href, children }: {
   );
 }
 
-async function Dashboard() {
-  const [active, inactive, departmentCount, perDepartment, perRole, recent, requestCounts] = await Promise.all([
+async function Dashboard({ alertDays }: { alertDays: number }) {
+  const [active, inactive, departmentCount, perDepartment, perRole, recent, requestCounts, hrAlerts] = await Promise.all([
     db.user.count({ where: { active: true } }),
     db.user.count({ where: { active: false } }),
     db.department.count(),
@@ -114,6 +120,7 @@ async function Dashboard() {
       select: { id: true, name: true, jobTitle: true, department: { select: { name: true } } },
     }),
     db.request.groupBy({ by: ["status"], _count: true }),
+    getHrAlerts(alertDays),
   ]);
   const countOf = (status: string) => requestCounts.find((r) => r.status === status)?._count ?? 0;
   const approved = countOf("APPROVED");
@@ -135,7 +142,7 @@ async function Dashboard() {
     <section className="space-y-4">
       <h2 className="text-lg font-semibold">{t.home.dashboard}</h2>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatTile label={t.home.totalEmployees} value={active + inactive} icon={Users} />
         <StatTile label={t.home.activeEmployees} value={active} icon={UserCheck} />
         <StatTile label={t.home.inactiveEmployees} value={inactive} icon={UserX} />
@@ -143,6 +150,9 @@ async function Dashboard() {
         <StatTile label={t.home.pendingRequests} value={countOf("PENDING")} icon={Clock} />
         <StatTile label={t.home.completedRequests} value={approved + rejected} icon={CheckCircle2}
           hint={t.home.completedSplit(approved, rejected)} />
+        <Link href="/hr" className="contents">
+          <StatTile label={t.home.hrAlerts} value={alertCount(hrAlerts)} icon={BellRing} hint={t.home.hrAlertsHint} />
+        </Link>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">

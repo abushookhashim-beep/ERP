@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
   Building2, CalendarDays, CheckSquare, FileText, Home, KeyRound, LogOut, Megaphone, Menu,
-  Users, Wallet, X, Briefcase, Workflow,
+  Users, Wallet, X, Briefcase, Workflow, UserRound,
 } from "lucide-react";
 import type { Role } from "@prisma/client";
 import { logout } from "@/app/login/actions";
@@ -13,6 +13,7 @@ import { t } from "@/i18n";
 
 const NAV = [
   { href: "/", label: t.nav.home, icon: Home },
+  { href: "/profile", label: t.nav.profile, icon: UserRound },
   { href: "/requests", label: t.nav.requests, icon: FileText },
   { href: "/approvals", label: t.nav.approvals, icon: CheckSquare },
   { href: "/circulars", label: t.nav.circulars, icon: Megaphone },

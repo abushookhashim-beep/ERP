@@ -9,6 +9,8 @@ import { requireUser } from "@/lib/auth";
 import type { FormState } from "@/lib/form";
 import { optional } from "@/lib/form";
 import { PLEDGE_SENDER_ROLES, SUBTYPES, buildSteps, canActOnStep, inclusiveDays } from "@/lib/requests";
+import { checkFile, storeFile, uploadedFile } from "@/lib/files";
+import { getAnnualBalance, getLeavePolicy, getSickDaysInYear } from "@/lib/leave";
 import { t } from "@/i18n";
 
 const dateField = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, t.common.required).transform((s) => new Date(s));
@@ -48,13 +50,36 @@ export async function createLeave(_: FormState, formData: FormData): Promise<For
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const { subtype, startDate, endDate } = parsed.data;
   if (endDate < startDate) return { error: t.requests.invalidDates };
+  const days = inclusiveDays(startDate, endDate);
+  const policy = await getLeavePolicy();
+
+  if (subtype === "ANNUAL") {
+    const profile = await db.employeeProfile.findUnique({ where: { userId: user.id } });
+    const balance = await getAnnualBalance(user.id, profile, policy);
+    // بدون تاريخ مباشرة لا نعرف الرصيد، فنترك القرار للمعتمدين
+    if (balance && days > balance.available) return { error: t.requests.insufficientBalance(Math.max(0, balance.available)) };
+  }
+  if (subtype === "MARRIAGE" && days > policy.marriageDays) return { error: t.requests.exceedsLimit(policy.marriageDays) };
+  if (subtype === "BEREAVEMENT" && days > policy.bereavementDays) return { error: t.requests.exceedsLimit(policy.bereavementDays) };
+
+  const file = uploadedFile(formData.get("attachment"));
+  if (subtype === "SICK") {
+    if (!file) return { error: t.requests.attachmentRequired };
+    const used = await getSickDaysInYear(user.id, startDate.getUTCFullYear());
+    if (used + days > policy.sickDaysPerYear) return { error: t.requests.sickLimit(Math.max(0, policy.sickDaysPerYear - used)) };
+  }
+  if (file) {
+    const fileError = checkFile(file);
+    if (fileError) return { error: t.hr.files[fileError] };
+  }
 
   return createRequest("LEAVE", user, user.id, {
     subtype,
     startDate,
     endDate,
-    days: inclusiveDays(startDate, endDate),
+    days,
     notes: optional(formData.get("notes")),
+    ...(file && { attachmentId: await storeFile(file, user.id) }),
   });
 }
 

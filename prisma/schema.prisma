@@ -16,6 +16,36 @@ enum Role {
   EMPLOYEE // موظف
 }
 
+enum ContractType {
+  PERMANENT // غير محدد المدة
+  FIXED // محدد المدة
+  SEASONAL // موسمي (الحج)
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum MaritalStatus {
+  SINGLE
+  MARRIED
+  DIVORCED
+  WIDOWED
+}
+
+enum DocumentType {
+  NATIONAL_ID
+  IQAMA
+  PASSPORT
+  CONTRACT
+  WORK_PERMIT
+  DRIVING_LICENSE
+  CERTIFICATE
+  MEDICAL
+  OTHER
+}
+
 enum RequestType {
   LEAVE // إجازة
   LETTER // خطاب
@@ -59,54 +89,60 @@ model Department {
 }
 
 model User {
-  id                 String         @id @default(cuid())
-  employeeNo         String         @unique
+  id                 String             @id @default(cuid())
+  employeeNo         String             @unique
   name               String
-  email              String         @unique
+  email              String             @unique
   passwordHash       String
   // يُلزم المستخدم بتغيير كلمة المرور عند الدخول (حساب جديد أو كلمة مرور أعاد المدير تعيينها)
-  mustChangePassword Boolean        @default(true)
-  role               Role           @default(EMPLOYEE)
+  mustChangePassword Boolean            @default(true)
+  role               Role               @default(EMPLOYEE)
   jobTitle           String?
   phone              String?
   // رقم الهوية الوطنية أو الإقامة (10 أرقام)
-  nationalId         String?        @unique
-  active             Boolean        @default(true)
+  nationalId         String?            @unique
+  active             Boolean            @default(true)
   departmentId       String?
-  department         Department?    @relation("DepartmentMembers", fields: [departmentId], references: [id])
+  department         Department?        @relation("DepartmentMembers", fields: [departmentId], references: [id])
   managerId          String?
-  manager            User?          @relation("ReportingLine", fields: [managerId], references: [id])
-  reports            User[]         @relation("ReportingLine")
-  headOf             Department?    @relation("DepartmentHead")
-  requests           Request[]      @relation("RequestSubject")
-  createdRequests    Request[]      @relation("RequestCreator")
-  approvalSteps      ApprovalStep[] @relation("StepApprover")
-  actedSteps         ApprovalStep[] @relation("StepActor")
+  manager            User?              @relation("ReportingLine", fields: [managerId], references: [id])
+  reports            User[]             @relation("ReportingLine")
+  headOf             Department?        @relation("DepartmentHead")
+  requests           Request[]          @relation("RequestSubject")
+  createdRequests    Request[]          @relation("RequestCreator")
+  approvalSteps      ApprovalStep[]     @relation("StepApprover")
+  actedSteps         ApprovalStep[]     @relation("StepActor")
+  profile            EmployeeProfile?
+  documents          EmployeeDocument[]
+  uploadedFiles      StoredFile[]
   lastLoginAt        DateTime?
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 }
 
 model Request {
-  id          String         @id @default(cuid())
-  number      Int            @unique @default(autoincrement())
-  type        RequestType
-  subtype     String
-  status      RequestStatus  @default(PENDING)
+  id           String         @id @default(cuid())
+  number       Int            @unique @default(autoincrement())
+  type         RequestType
+  subtype      String
+  status       RequestStatus  @default(PENDING)
   // الموظف الذي يخصه الطلب (مقدم الإجازة، أو المرسَل إليه التعهد)
-  subjectId   String
-  subject     User           @relation("RequestSubject", fields: [subjectId], references: [id])
-  createdById String
-  createdBy   User           @relation("RequestCreator", fields: [createdById], references: [id])
-  startDate   DateTime?      @db.Date
-  endDate     DateTime?      @db.Date
-  days        Int?
-  details     Json           @default("{}")
-  notes       String?
-  steps       ApprovalStep[]
-  completedAt DateTime?
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  subjectId    String
+  subject      User           @relation("RequestSubject", fields: [subjectId], references: [id])
+  createdById  String
+  createdBy    User           @relation("RequestCreator", fields: [createdById], references: [id])
+  startDate    DateTime?      @db.Date
+  endDate      DateTime?      @db.Date
+  days         Int?
+  details      Json           @default("{}")
+  notes        String?
+  // مرفق الطلب، مثل التقرير الطبي للإجازة المرضية
+  attachmentId String?        @unique
+  attachment   StoredFile?    @relation("RequestAttachment", fields: [attachmentId], references: [id])
+  steps        ApprovalStep[]
+  completedAt  DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
 
   @@index([subjectId])
   @@index([status])
@@ -134,4 +170,68 @@ model ApprovalStep {
 model Setting {
   key   String @id
   value String
+}
+
+/**
+ * بيانات الموظف التفصيلية التي تديرها الموارد البشرية.
+ */
+model EmployeeProfile {
+  id                  String         @id @default(cuid())
+  userId              String         @unique
+  user                User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nationality         String?
+  birthDate           DateTime?      @db.Date
+  gender              Gender?
+  maritalStatus       MaritalStatus?
+  emergencyName       String?
+  emergencyPhone      String?
+  hireDate            DateTime?      @db.Date
+  contractType        ContractType?
+  contractEnd         DateTime?      @db.Date
+  probationEnd        DateTime?      @db.Date
+  workLocation        String?
+  basicSalary         Decimal?       @db.Decimal(12, 2)
+  housingAllowance    Decimal?       @db.Decimal(12, 2)
+  transportAllowance  Decimal?       @db.Decimal(12, 2)
+  otherAllowance      Decimal?       @db.Decimal(12, 2)
+  bankName            String?
+  iban                String?
+  gosiNumber          String?
+  // الرصيد الافتتاحي للإجازة السنوية كما في تاريخ معين (عند نقل الموظفين الحاليين للنظام)
+  openingLeaveBalance Decimal?       @db.Decimal(6, 2)
+  leaveBalanceAsOf    DateTime?      @db.Date
+  updatedAt           DateTime       @updatedAt
+}
+
+model EmployeeDocument {
+  id         String       @id @default(cuid())
+  userId     String
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type       DocumentType
+  number     String?
+  issueDate  DateTime?    @db.Date
+  expiryDate DateTime?    @db.Date
+  notes      String?
+  fileId     String?      @unique
+  file       StoredFile?  @relation("DocumentFile", fields: [fileId], references: [id])
+  createdAt  DateTime     @default(now())
+
+  @@index([userId])
+  @@index([expiryDate])
+}
+
+/**
+ * ملف مرفوع. المحتوى مخزن في قاعدة البيانات ويُقدّم فقط عبر مسار يتحقق من الصلاحيات.
+ */
+model StoredFile {
+  id           String            @id @default(cuid())
+  name         String
+  mime         String
+  size         Int
+  data         Bytes
+  uploadedById String
+  uploadedBy   User              @relation(fields: [uploadedById], references: [id])
+  document     EmployeeDocument? @relation("DocumentFile")
+  request      Request?          @relation("RequestAttachment")
+  createdAt    DateTime          @default(now())
 }

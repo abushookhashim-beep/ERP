@@ -48,6 +48,13 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
   if (details.bankName) rows.push([t.requests.fields.bankName, details.bankName]);
   if (details.iban) rows.push([t.requests.fields.iban, <span key="iban" dir="ltr">{details.iban}</span>]);
   if (request.notes) rows.push([t.requests.fields.notes, request.notes]);
+  if (request.attachmentId) {
+    rows.push([t.requests.attachment, (
+      <a key="att" href={`/api/files/${request.attachmentId}`} target="_blank" className="text-brand underline">
+        {t.requests.viewAttachment}
+      </a>
+    )]);
+  }
 
   return (
     <div className="space-y-6">
