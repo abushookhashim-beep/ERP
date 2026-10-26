@@ -1,8 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
 import { updateDepartment } from "../actions";
 import { t } from "@/i18n";
+import { useFormAction } from "@/lib/use-form-action";
 
 type Option = { id: string; name: string; depth?: number };
 type Props = {
@@ -12,10 +12,10 @@ type Props = {
 };
 
 export function EditDepartmentForm({ department, parents, users }: Props) {
-  const [state, action, pending] = useActionState(updateDepartment.bind(null, department.id), undefined);
+  const [state, onSubmit, pending] = useFormAction(updateDepartment.bind(null, department.id));
 
   return (
-    <form action={action} className="card max-w-xl space-y-4">
+    <form onSubmit={onSubmit} className="card max-w-xl space-y-4">
       <div>
         <label className="label" htmlFor="name">{t.departments.name}</label>
         <input id="name" name="name" required defaultValue={department.name} className="input" />

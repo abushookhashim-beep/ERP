@@ -46,6 +46,31 @@ enum DocumentType {
   OTHER
 }
 
+enum MeetingMode {
+  IN_PERSON
+  ONLINE
+  HYBRID
+}
+
+enum MeetingStatus {
+  SCHEDULED
+  COMPLETED // اعتُمد محضره
+  CANCELLED
+}
+
+enum InviteResponse {
+  PENDING
+  ACCEPTED
+  DECLINED
+  TENTATIVE
+}
+
+enum TaskStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  DONE
+}
+
 enum RequestType {
   LEAVE // إجازة
   LETTER // خطاب
@@ -113,6 +138,11 @@ model User {
   approvalSteps      ApprovalStep[]     @relation("StepApprover")
   actedSteps         ApprovalStep[]     @relation("StepActor")
   profile            EmployeeProfile?
+  organizedMeetings  Meeting[]          @relation("MeetingOrganizer")
+  secretaryMeetings  Meeting[]          @relation("MeetingSecretary")
+  meetingInvites     MeetingAttendee[]
+  assignedTasks      MeetingTask[]      @relation("TaskAssignee")
+  createdTasks       MeetingTask[]      @relation("TaskCreator")
   documents          EmployeeDocument[]
   uploadedFiles      StoredFile[]
   lastLoginAt        DateTime?
@@ -224,14 +254,97 @@ model EmployeeDocument {
  * ملف مرفوع. المحتوى مخزن في قاعدة البيانات ويُقدّم فقط عبر مسار يتحقق من الصلاحيات.
  */
 model StoredFile {
-  id           String            @id @default(cuid())
+  id           String             @id @default(cuid())
   name         String
   mime         String
   size         Int
   data         Bytes
   uploadedById String
-  uploadedBy   User              @relation(fields: [uploadedById], references: [id])
-  document     EmployeeDocument? @relation("DocumentFile")
-  request      Request?          @relation("RequestAttachment")
-  createdAt    DateTime          @default(now())
+  uploadedBy   User               @relation(fields: [uploadedById], references: [id])
+  document     EmployeeDocument?  @relation("DocumentFile")
+  request      Request?           @relation("RequestAttachment")
+  meeting      MeetingAttachment?
+  createdAt    DateTime           @default(now())
+}
+
+model MeetingRoom {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  capacity Int?
+  active   Boolean   @default(true)
+  meetings Meeting[]
+}
+
+model Meeting {
+  id                String              @id @default(cuid())
+  number            Int                 @unique @default(autoincrement())
+  title             String
+  startsAt          DateTime
+  endsAt            DateTime
+  mode              MeetingMode
+  roomId            String?
+  room              MeetingRoom?        @relation(fields: [roomId], references: [id])
+  onlineUrl         String?
+  agenda            String?
+  organizerId       String
+  organizer         User                @relation("MeetingOrganizer", fields: [organizerId], references: [id])
+  // أمين السر: يكتب المحضر مع المنظّم
+  secretaryId       String?
+  secretary         User?               @relation("MeetingSecretary", fields: [secretaryId], references: [id])
+  status            MeetingStatus       @default(SCHEDULED)
+  minutes           String?
+  minutesApprovedAt DateTime?
+  attendees         MeetingAttendee[]
+  tasks             MeetingTask[]
+  attachments       MeetingAttachment[]
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@index([startsAt])
+  @@index([roomId, startsAt])
+}
+
+model MeetingAttendee {
+  meetingId    String
+  meeting      Meeting        @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User           @relation(fields: [userId], references: [id])
+  response     InviteResponse @default(PENDING)
+  responseNote String?
+  respondedAt  DateTime?
+  // الحضور الفعلي، يُسجل في المحضر
+  attended     Boolean?
+
+  @@id([meetingId, userId])
+  @@index([userId])
+}
+
+model MeetingAttachment {
+  id        String     @id @default(cuid())
+  meetingId String
+  meeting   Meeting    @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  fileId    String     @unique
+  file      StoredFile @relation(fields: [fileId], references: [id])
+}
+
+/**
+ * قرار أو توصية من محضر اجتماع، مسندة لشخص.
+ */
+model MeetingTask {
+  id          String     @id @default(cuid())
+  meetingId   String
+  meeting     Meeting    @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  title       String
+  assigneeId  String
+  assignee    User       @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  createdById String
+  createdBy   User       @relation("TaskCreator", fields: [createdById], references: [id])
+  dueDate     DateTime?  @db.Date
+  status      TaskStatus @default(NOT_STARTED)
+  note        String?
+  completedAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([assigneeId, status])
 }

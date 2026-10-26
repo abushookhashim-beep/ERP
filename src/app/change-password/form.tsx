@@ -1,14 +1,14 @@
 "use client";
 
-import { useActionState } from "react";
 import { changePassword } from "./actions";
 import { t } from "@/i18n";
+import { useFormAction } from "@/lib/use-form-action";
 
 export function ChangePasswordForm() {
-  const [state, action, pending] = useActionState(changePassword, undefined);
+  const [state, onSubmit, pending] = useFormAction(changePassword);
 
   return (
-    <form action={action} className="card space-y-4">
+    <form onSubmit={onSubmit} className="card space-y-4">
       <Field name="current" label={t.changePassword.current} autoComplete="current-password" />
       <div>
         <Field name="next" label={t.changePassword.next} autoComplete="new-password" />

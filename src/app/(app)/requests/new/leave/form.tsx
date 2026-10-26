@@ -1,15 +1,16 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useState } from "react";
 import { createLeave } from "../../actions";
 import { t } from "@/i18n";
+import { useFormAction } from "@/lib/use-form-action";
 
 const SUBTYPES = ["ANNUAL", "SICK", "BEREAVEMENT", "MARRIAGE", "UNPAID"] as const;
 
 type Props = { balance: { available: number; entitlement: number } | null; accept: string; sickInfo: string };
 
 export function LeaveForm({ balance, accept, sickInfo }: Props) {
-  const [state, action, pending] = useActionState(createLeave, undefined);
+  const [state, onSubmit, pending] = useFormAction(createLeave);
   const [subtype, setSubtype] = useState<(typeof SUBTYPES)[number]>("ANNUAL");
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
@@ -18,7 +19,7 @@ export function LeaveForm({ balance, accept, sickInfo }: Props) {
     : null;
 
   return (
-    <form action={action} className="card space-y-4">
+    <form onSubmit={onSubmit} className="card space-y-4">
       <fieldset>
         <legend className="label">{t.requests.fields.subtype}</legend>
         <div className="grid gap-2 sm:grid-cols-3">

@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
   Building2, CalendarDays, CheckSquare, FileText, Home, KeyRound, LogOut, Megaphone, Menu,
-  Users, Wallet, X, Briefcase, Workflow, UserRound,
+  Users, Wallet, X, Briefcase, Workflow, UserRound, ListTodo, DoorOpen,
 } from "lucide-react";
 import type { Role } from "@prisma/client";
 import { logout } from "@/app/login/actions";
@@ -18,6 +18,7 @@ const NAV = [
   { href: "/approvals", label: t.nav.approvals, icon: CheckSquare },
   { href: "/circulars", label: t.nav.circulars, icon: Megaphone },
   { href: "/meetings", label: t.nav.meetings, icon: CalendarDays },
+  { href: "/tasks", label: t.nav.tasks, icon: ListTodo },
   { href: "/hr", label: t.nav.hr, icon: Briefcase, roles: ["ADMIN", "HR", "EXECUTIVE"] },
   { href: "/finance", label: t.nav.finance, icon: Wallet, roles: ["ADMIN", "FINANCE", "EXECUTIVE"] },
 ] satisfies { href: string; label: string; icon: unknown; roles?: Role[] }[];
@@ -26,11 +27,13 @@ const ADMIN_NAV = [
   { href: "/admin/users", label: t.nav.users, icon: Users },
   { href: "/admin/departments", label: t.nav.departments, icon: Building2 },
   { href: "/admin/approval-settings", label: t.nav.approvalSettings, icon: Workflow },
+  { href: "/admin/rooms", label: t.nav.rooms, icon: DoorOpen },
 ];
 
-type Props = { user: { name: string; role: Role; jobTitle: string | null }; pendingApprovals: number };
+type Badges = Partial<Record<string, number>>;
+type Props = { user: { name: string; role: Role; jobTitle: string | null }; badges: Badges };
 
-export function Sidebar({ user, pendingApprovals }: Props) {
+export function Sidebar({ user, badges }: Props) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -42,8 +45,8 @@ export function Sidebar({ user, pendingApprovals }: Props) {
       }`}>
       <item.icon size={18} />
       {item.label}
-      {item.href === "/approvals" && pendingApprovals > 0 && (
-        <span className="ms-auto rounded-full bg-accent px-2 text-xs font-semibold text-white">{pendingApprovals}</span>
+      {!!badges[item.href] && (
+        <span className="ms-auto rounded-full bg-accent px-2 text-xs font-semibold text-white">{badges[item.href]}</span>
       )}
     </Link>
   );

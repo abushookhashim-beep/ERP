@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useState } from "react";
 import { saveProfile } from "../../actions";
 import { t } from "@/i18n";
+import { useFormAction } from "@/lib/use-form-action";
 
 export type ProfileValues = Record<string, string>;
 
@@ -12,12 +13,12 @@ const MONEY = ["basicSalary", "housingAllowance", "transportAllowance", "otherAl
 export function ProfileForm({ userId, values, canEdit, showFinancial }: {
   userId: string; values: ProfileValues; canEdit: boolean; showFinancial: boolean;
 }) {
-  const [state, action, pending] = useActionState(saveProfile.bind(null, userId), undefined);
+  const [state, onSubmit, pending] = useFormAction(saveProfile.bind(null, userId));
   const [money, setMoney] = useState(() => Object.fromEntries(MONEY.map((k) => [k, values[k] ?? ""])));
   const total = MONEY.reduce((sum, k) => sum + (Number(money[k].replace(/,/g, "")) || 0), 0);
 
   return (
-    <form action={action} className="space-y-6">
+    <form onSubmit={onSubmit} className="space-y-6">
       <fieldset disabled={!canEdit} className="space-y-6">
         <Section title={t.hr.sections.personal}>
           <Input name="nationality" label={f.nationality} values={values} />

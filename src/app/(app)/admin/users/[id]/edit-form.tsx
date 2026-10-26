@@ -1,9 +1,9 @@
 "use client";
 
-import { useActionState } from "react";
 import type { Role } from "@prisma/client";
 import { updateUser } from "../actions";
 import { t } from "@/i18n";
+import { useFormAction } from "@/lib/use-form-action";
 
 type Option = { id: string; name: string; depth?: number };
 type Props = {
@@ -17,10 +17,10 @@ type Props = {
 };
 
 export function EditUserForm({ user, departments, managers, isSelf }: Props) {
-  const [state, action, pending] = useActionState(updateUser.bind(null, user.id), undefined);
+  const [state, onSubmit, pending] = useFormAction(updateUser.bind(null, user.id));
 
   return (
-    <form action={action} className="card grid max-w-3xl gap-4 md:grid-cols-2">
+    <form onSubmit={onSubmit} className="card grid max-w-3xl gap-4 md:grid-cols-2">
       <Field name="employeeNo" label={t.users.employeeNo} defaultValue={user.employeeNo} required ltr />
       <Field name="name" label={t.users.name} defaultValue={user.name} required />
       <Field name="email" label={t.users.email} type="email" defaultValue={user.email} required ltr />

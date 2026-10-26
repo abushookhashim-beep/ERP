@@ -1,17 +1,18 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useState } from "react";
 import { createPledge } from "../../actions";
 import { t } from "@/i18n";
+import { useFormAction } from "@/lib/use-form-action";
 
 const SUBTYPES = ["UNDERTAKING", "CUSTODY"] as const;
 
 export function PledgeForm({ employees }: { employees: { id: string; name: string; employeeNo: string }[] }) {
-  const [state, action, pending] = useActionState(createPledge, undefined);
+  const [state, onSubmit, pending] = useFormAction(createPledge);
   const [subtype, setSubtype] = useState<(typeof SUBTYPES)[number]>("UNDERTAKING");
 
   return (
-    <form action={action} className="card space-y-4">
+    <form onSubmit={onSubmit} className="card space-y-4">
       <fieldset>
         <legend className="label">{t.requests.fields.subtype}</legend>
         <div className="grid gap-2 sm:grid-cols-2">

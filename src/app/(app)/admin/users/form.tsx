@@ -1,18 +1,19 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { createUser } from "./actions";
 import { t } from "@/i18n";
+import { useFormAction } from "@/lib/use-form-action";
 
 type Option = { id: string; name: string; depth?: number };
 
 export function UserForm({ departments, users }: { departments: Option[]; users: Option[] }) {
-  const [state, action, pending] = useActionState(createUser, undefined);
+  const [state, onSubmit, pending] = useFormAction(createUser);
   const form = useRef<HTMLFormElement>(null);
   useEffect(() => { if (state?.ok) form.current?.reset(); }, [state]);
 
   return (
-    <form ref={form} action={action} className="card grid gap-4 md:grid-cols-4 md:items-end">
+    <form ref={form} onSubmit={onSubmit} className="card grid gap-4 md:grid-cols-4 md:items-end">
       <Field name="employeeNo" label={t.users.employeeNo} required ltr />
       <Field name="name" label={t.users.name} required />
       <Field name="email" label={t.users.email} type="email" required ltr />

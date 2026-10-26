@@ -1,17 +1,18 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { addDocument } from "../../actions";
 import { t } from "@/i18n";
+import { useFormAction } from "@/lib/use-form-action";
 
 export function DocumentForm({ userId, accept }: { userId: string; accept: string }) {
-  const [state, action, pending] = useActionState(addDocument.bind(null, userId), undefined);
+  const [state, onSubmit, pending] = useFormAction(addDocument.bind(null, userId));
   const form = useRef<HTMLFormElement>(null);
   useEffect(() => { if (state?.ok) form.current?.reset(); }, [state]);
   const d = t.hr.documents;
 
   return (
-    <form ref={form} action={action} className="grid gap-4 border-t border-border pt-4 sm:grid-cols-2 lg:grid-cols-3">
+    <form ref={form} onSubmit={onSubmit} className="grid gap-4 border-t border-border pt-4 sm:grid-cols-2 lg:grid-cols-3">
       <div>
         <label className="label" htmlFor="type">{d.type}</label>
         <select id="type" name="type" required className="input">

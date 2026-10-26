@@ -7,11 +7,16 @@ import { actionableStepsWhere } from "@/lib/requests";
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser();
   if (user.mustChangePassword) redirect("/change-password");
-  const pendingApprovals = await db.approvalStep.count({ where: actionableStepsWhere(user) });
+  const now = new Date();
+  const [approvals, invites, tasks] = await Promise.all([
+    db.approvalStep.count({ where: actionableStepsWhere(user) }),
+    db.meetingAttendee.count({ where: { userId: user.id, response: "PENDING", meeting: { status: "SCHEDULED", endsAt: { gt: now } } } }),
+    db.meetingTask.count({ where: { assigneeId: user.id, status: { not: "DONE" } } }),
+  ]);
 
   return (
     <div className="lg:flex">
-      <Sidebar user={{ name: user.name, role: user.role, jobTitle: user.jobTitle }} pendingApprovals={pendingApprovals} />
+      <Sidebar user={{ name: user.name, role: user.role, jobTitle: user.jobTitle }} badges={{ "/approvals": approvals, "/meetings": invites, "/tasks": tasks }} />
       <main className="min-w-0 flex-1 p-4 lg:p-8">{children}</main>
     </div>
   );

@@ -1,17 +1,18 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useState } from "react";
 import { createLetter } from "../../actions";
 import { t } from "@/i18n";
+import { useFormAction } from "@/lib/use-form-action";
 
 const SUBTYPES = ["SALARY_INTRO", "SALARY_TRANSFER"] as const;
 
 export function LetterForm() {
-  const [state, action, pending] = useActionState(createLetter, undefined);
+  const [state, onSubmit, pending] = useFormAction(createLetter);
   const [subtype, setSubtype] = useState<(typeof SUBTYPES)[number]>("SALARY_INTRO");
 
   return (
-    <form action={action} className="card space-y-4">
+    <form onSubmit={onSubmit} className="card space-y-4">
       <fieldset>
         <legend className="label">{t.requests.fields.subtype}</legend>
         <div className="grid gap-2 sm:grid-cols-2">

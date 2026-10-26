@@ -1,16 +1,18 @@
 import {
-  BellRing, Building2, CalendarDays, CheckCircle2, CheckSquare, Clock, FileText, Megaphone, UserCheck, UserX, Users,
+  BellRing, Building2, CalendarDays, CheckCircle2, CheckSquare, Clock, FileText, ListTodo, Megaphone, UserCheck, UserX, Users,
 } from "lucide-react";
 import Link from "next/link";
 import type { Role } from "@prisma/client";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { formatDateTime } from "@/lib/format";
+import { formatDate, formatDateTime } from "@/lib/format";
 import { actionableStepsWhere, formatRequestNumber } from "@/lib/requests";
 import { StatusBadge } from "@/components/requests/status-badge";
 import { LeaveBalanceCard } from "@/components/hr/leave-balance-card";
 import { alertCount, getHrAlerts } from "@/lib/hr-alerts";
 import { getAnnualBalance, getLeavePolicy } from "@/lib/leave";
+import { participatesWhere, riyadhDay, riyadhDayRange } from "@/lib/meetings";
+import { formatTimeRange } from "@/components/meetings/meeting-card";
 import { BarList } from "@/components/dashboard/bar-list";
 import { StatTile } from "@/components/dashboard/stat-tile";
 import { t } from "@/i18n";
@@ -26,7 +28,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const { passwordChanged } = await searchParams;
   const today = new Intl.DateTimeFormat("ar-SA", { dateStyle: "full" }).format(new Date());
   const policy = await getLeavePolicy();
-  const [myRequests, approvals, balance] = await Promise.all([
+  const { start: dayStart, end: dayEnd } = riyadhDayRange(riyadhDay(new Date()));
+  const [myRequests, approvals, balance, todayMeetings, myTasks] = await Promise.all([
     db.request.findMany({
       where: { subjectId: user.id },
       orderBy: { createdAt: "desc" },
@@ -40,6 +43,17 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       select: { id: true, request: { select: { id: true, subtype: true, createdAt: true, subject: { select: { name: true } } } } },
     }),
     db.employeeProfile.findUnique({ where: { userId: user.id } }).then((p) => getAnnualBalance(user.id, p, policy)),
+    db.meeting.findMany({
+      where: { ...participatesWhere(user.id), status: { not: "CANCELLED" }, startsAt: { gte: dayStart, lt: dayEnd } },
+      orderBy: { startsAt: "asc" },
+      select: { id: true, title: true, startsAt: true, endsAt: true, room: { select: { name: true } } },
+    }),
+    db.meetingTask.findMany({
+      where: { assigneeId: user.id, status: { not: "DONE" } },
+      orderBy: { dueDate: "asc" },
+      take: WIDGET_LIMIT,
+      select: { id: true, title: true, dueDate: true, meeting: { select: { title: true } } },
+    }),
   ]);
 
   return (
@@ -80,7 +94,26 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         </Widget>
         <LeaveBalanceCard balance={balance} />
         <Widget title={t.home.latestCirculars} icon={Megaphone} />
-        <Widget title={t.home.todayMeetings} icon={CalendarDays} />
+        <Widget title={t.home.todayMeetings} icon={CalendarDays} href="/meetings">
+          {todayMeetings.map((mt) => (
+            <li key={mt.id}>
+              <Link href={`/meetings/${mt.id}`} className="block py-2 hover:text-brand">
+                <span className="block font-medium">{mt.title}</span>
+                <span className="text-xs text-muted">{formatTimeRange(mt.startsAt, mt.endsAt)}{mt.room && ` · ${mt.room.name}`}</span>
+              </Link>
+            </li>
+          ))}
+        </Widget>
+        <Widget title={t.home.myTasks} icon={ListTodo} href="/tasks">
+          {myTasks.map((task) => (
+            <li key={task.id}>
+              <Link href="/tasks" className="block py-2 hover:text-brand">
+                <span className="block font-medium">{task.title}</span>
+                <span className="text-xs text-muted">{task.meeting.title}{task.dueDate && ` · ${formatDate(task.dueDate)}`}</span>
+              </Link>
+            </li>
+          ))}
+        </Widget>
       </div>
     </div>
   );

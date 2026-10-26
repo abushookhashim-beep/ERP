@@ -1,18 +1,19 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { createDepartment } from "./actions";
 import { t } from "@/i18n";
+import { useFormAction } from "@/lib/use-form-action";
 
 type Option = { id: string; name: string; depth?: number };
 
 export function DepartmentForm({ departments, users }: { departments: Option[]; users: Option[] }) {
-  const [state, action, pending] = useActionState(createDepartment, undefined);
+  const [state, onSubmit, pending] = useFormAction(createDepartment);
   const form = useRef<HTMLFormElement>(null);
   useEffect(() => { if (state?.ok) form.current?.reset(); }, [state]);
 
   return (
-    <form ref={form} action={action} className="card grid gap-4 md:grid-cols-4 md:items-end">
+    <form ref={form} onSubmit={onSubmit} className="card grid gap-4 md:grid-cols-4 md:items-end">
       <div>
         <label className="label" htmlFor="name">{t.departments.name}</label>
         <input id="name" name="name" required className="input" />

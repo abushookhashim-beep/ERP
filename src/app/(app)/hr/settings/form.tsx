@@ -1,16 +1,16 @@
 "use client";
 
-import { useActionState } from "react";
 import { saveLeavePolicy } from "../actions";
 import type { LeavePolicy } from "@/lib/leave";
 import { t } from "@/i18n";
+import { useFormAction } from "@/lib/use-form-action";
 
 export function PolicyForm({ policy }: { policy: LeavePolicy }) {
-  const [state, action, pending] = useActionState(saveLeavePolicy, undefined);
+  const [state, onSubmit, pending] = useFormAction(saveLeavePolicy);
   const keys = Object.keys(policy) as (keyof LeavePolicy)[];
 
   return (
-    <form action={action} className="card max-w-2xl space-y-4">
+    <form onSubmit={onSubmit} className="card max-w-2xl space-y-4">
       <p className="text-sm text-muted">{t.hr.policy.hint}</p>
       <div className="grid gap-4 sm:grid-cols-2">
         {keys.map((k) => (

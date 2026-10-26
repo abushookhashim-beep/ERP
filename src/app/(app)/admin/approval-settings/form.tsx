@@ -1,14 +1,14 @@
 "use client";
 
-import { useActionState } from "react";
 import { saveApprovalSettings } from "./actions";
 import { t } from "@/i18n";
+import { useFormAction } from "@/lib/use-form-action";
 
 export function ApprovalSettingsForm({ users, ceoId }: { users: { id: string; name: string }[]; ceoId: string | null }) {
-  const [state, action, pending] = useActionState(saveApprovalSettings, undefined);
+  const [state, onSubmit, pending] = useFormAction(saveApprovalSettings);
 
   return (
-    <form action={action} className="card max-w-xl space-y-4">
+    <form onSubmit={onSubmit} className="card max-w-xl space-y-4">
       <div>
         <label className="label" htmlFor="ceoId">{t.approvalSettings.ceo}</label>
         <select id="ceoId" name="ceoId" defaultValue={ceoId ?? ""} className="input">

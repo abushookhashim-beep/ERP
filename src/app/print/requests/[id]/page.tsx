@@ -5,7 +5,7 @@ import { formatDate, formatDateTime } from "@/lib/format";
 import { getVisibleRequest } from "@/lib/request-view";
 import { formatRequestNumber } from "@/lib/requests";
 import { t } from "@/i18n";
-import { PrintButton } from "./print-button";
+import { PrintButton } from "@/components/print-button";
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ auto?: string }> };
 
