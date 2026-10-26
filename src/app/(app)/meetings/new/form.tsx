@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { MeetingMode } from "@prisma/client";
 import { createMeeting } from "../actions";
-import { InviteePicker, type Person } from "./invitee-picker";
+import { PeoplePicker, type Person } from "@/components/people-picker";
 import { t } from "@/i18n";
 import { useFormAction } from "@/lib/use-form-action";
 
@@ -76,7 +76,7 @@ export function MeetingForm({ people, departments, rooms, accept, today }: Props
 
       <div>
         <span className="label">{m.fields.invitees}</span>
-        <InviteePicker people={people} departments={departments} />
+        <PeoplePicker name="invitees" people={people} departments={departments} />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">

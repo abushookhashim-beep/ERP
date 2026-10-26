@@ -97,6 +97,21 @@ enum TicketStatus {
   CLOSED
 }
 
+enum CircularCategory {
+  ADMINISTRATIVE
+  HR
+  FINANCE
+  OPERATIONS
+  IT
+  GENERAL
+}
+
+enum CircularAudience {
+  ALL
+  DEPARTMENTS
+  PEOPLE
+}
+
 enum RequestType {
   LEAVE // إجازة
   LETTER // خطاب
@@ -126,57 +141,60 @@ enum StepStatus {
 }
 
 model Department {
-  id        String       @id @default(cuid())
-  name      String       @unique
-  sortOrder Int          @default(0)
+  id        String               @id @default(cuid())
+  name      String               @unique
+  sortOrder Int                  @default(0)
   parentId  String?
-  parent    Department?  @relation("DepartmentTree", fields: [parentId], references: [id])
-  children  Department[] @relation("DepartmentTree")
-  headId    String?      @unique
-  head      User?        @relation("DepartmentHead", fields: [headId], references: [id])
-  members   User[]       @relation("DepartmentMembers")
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+  parent    Department?          @relation("DepartmentTree", fields: [parentId], references: [id])
+  children  Department[]         @relation("DepartmentTree")
+  headId    String?              @unique
+  head      User?                @relation("DepartmentHead", fields: [headId], references: [id])
+  members   User[]               @relation("DepartmentMembers")
+  circulars CircularDepartment[]
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
 }
 
 model User {
-  id                 String             @id @default(cuid())
-  employeeNo         String             @unique
+  id                 String              @id @default(cuid())
+  employeeNo         String              @unique
   name               String
-  email              String             @unique
+  email              String              @unique
   passwordHash       String
   // يُلزم المستخدم بتغيير كلمة المرور عند الدخول (حساب جديد أو كلمة مرور أعاد المدير تعيينها)
-  mustChangePassword Boolean            @default(true)
-  role               Role               @default(EMPLOYEE)
+  mustChangePassword Boolean             @default(true)
+  role               Role                @default(EMPLOYEE)
   jobTitle           String?
   phone              String?
   // رقم الهوية الوطنية أو الإقامة (10 أرقام)
-  nationalId         String?            @unique
-  active             Boolean            @default(true)
+  nationalId         String?             @unique
+  active             Boolean             @default(true)
   departmentId       String?
-  department         Department?        @relation("DepartmentMembers", fields: [departmentId], references: [id])
+  department         Department?         @relation("DepartmentMembers", fields: [departmentId], references: [id])
   managerId          String?
-  manager            User?              @relation("ReportingLine", fields: [managerId], references: [id])
-  reports            User[]             @relation("ReportingLine")
-  headOf             Department?        @relation("DepartmentHead")
-  requests           Request[]          @relation("RequestSubject")
-  createdRequests    Request[]          @relation("RequestCreator")
-  approvalSteps      ApprovalStep[]     @relation("StepApprover")
-  actedSteps         ApprovalStep[]     @relation("StepActor")
+  manager            User?               @relation("ReportingLine", fields: [managerId], references: [id])
+  reports            User[]              @relation("ReportingLine")
+  headOf             Department?         @relation("DepartmentHead")
+  requests           Request[]           @relation("RequestSubject")
+  createdRequests    Request[]           @relation("RequestCreator")
+  approvalSteps      ApprovalStep[]      @relation("StepApprover")
+  actedSteps         ApprovalStep[]      @relation("StepActor")
   profile            EmployeeProfile?
-  organizedMeetings  Meeting[]          @relation("MeetingOrganizer")
-  secretaryMeetings  Meeting[]          @relation("MeetingSecretary")
+  organizedMeetings  Meeting[]           @relation("MeetingOrganizer")
+  secretaryMeetings  Meeting[]           @relation("MeetingSecretary")
   meetingInvites     MeetingAttendee[]
-  assignedTasks      Task[]             @relation("TaskAssignee")
-  createdTasks       Task[]             @relation("TaskCreator")
-  tickets            Ticket[]           @relation("TicketRequester")
-  assignedTickets    Ticket[]           @relation("TicketAssignee")
+  assignedTasks      Task[]              @relation("TaskAssignee")
+  createdTasks       Task[]              @relation("TaskCreator")
+  tickets            Ticket[]            @relation("TicketRequester")
+  assignedTickets    Ticket[]            @relation("TicketAssignee")
   comments           Comment[]
+  issuedCirculars    Circular[]          @relation("CircularIssuer")
+  circularReceipts   CircularRecipient[]
   documents          EmployeeDocument[]
   uploadedFiles      StoredFile[]
   lastLoginAt        DateTime?
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 }
 
 model Request {
@@ -283,18 +301,19 @@ model EmployeeDocument {
  * ملف مرفوع. المحتوى مخزن في قاعدة البيانات ويُقدّم فقط عبر مسار يتحقق من الصلاحيات.
  */
 model StoredFile {
-  id           String             @id @default(cuid())
+  id           String              @id @default(cuid())
   name         String
   mime         String
   size         Int
   data         Bytes
   uploadedById String
-  uploadedBy   User               @relation(fields: [uploadedById], references: [id])
-  document     EmployeeDocument?  @relation("DocumentFile")
-  request      Request?           @relation("RequestAttachment")
+  uploadedBy   User                @relation(fields: [uploadedById], references: [id])
+  document     EmployeeDocument?   @relation("DocumentFile")
+  request      Request?            @relation("RequestAttachment")
   meeting      MeetingAttachment?
-  ticket       Ticket?            @relation("TicketAttachment")
-  createdAt    DateTime           @default(now())
+  ticket       Ticket?             @relation("TicketAttachment")
+  circular     CircularAttachment?
+  createdAt    DateTime            @default(now())
 }
 
 model MeetingRoom {
@@ -428,4 +447,58 @@ model Comment {
 
   @@index([taskId])
   @@index([ticketId])
+}
+
+model Circular {
+  id          String               @id @default(cuid())
+  // الرقم المعروض: السنة الهجرية / التسلسل، مثل 1448/015
+  year        Int
+  seq         Int
+  title       String
+  body        String
+  category    CircularCategory
+  // التعميم الهام يتطلب إقرار الموظف بالاطلاع والالتزام
+  important   Boolean              @default(false)
+  audience    CircularAudience
+  issuerId    String
+  issuer      User                 @relation("CircularIssuer", fields: [issuerId], references: [id])
+  expiresAt   DateTime?            @db.Date
+  departments CircularDepartment[]
+  // نسخة من المستهدفين وقت الإصدار، لمتابعة الاطلاع بدقة
+  recipients  CircularRecipient[]
+  attachments CircularAttachment[]
+  createdAt   DateTime             @default(now())
+
+  @@unique([year, seq])
+  @@index([createdAt])
+}
+
+model CircularDepartment {
+  circularId   String
+  circular     Circular   @relation(fields: [circularId], references: [id], onDelete: Cascade)
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@id([circularId, departmentId])
+}
+
+model CircularRecipient {
+  circularId     String
+  circular       Circular  @relation(fields: [circularId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User      @relation(fields: [userId], references: [id])
+  readAt         DateTime?
+  acknowledgedAt DateTime?
+  remindedAt     DateTime?
+
+  @@id([circularId, userId])
+  @@index([userId, readAt])
+}
+
+model CircularAttachment {
+  id         String     @id @default(cuid())
+  circularId String
+  circular   Circular   @relation(fields: [circularId], references: [id], onDelete: Cascade)
+  fileId     String     @unique
+  file       StoredFile @relation(fields: [fileId], references: [id])
 }

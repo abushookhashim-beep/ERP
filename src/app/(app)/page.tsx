@@ -12,6 +12,7 @@ import { LeaveBalanceCard } from "@/components/hr/leave-balance-card";
 import { alertCount, getHrAlerts } from "@/lib/hr-alerts";
 import { getAnnualBalance, getLeavePolicy } from "@/lib/leave";
 import { participatesWhere, riyadhDay, riyadhDayRange } from "@/lib/meetings";
+import { activeWhere, visibleWhere } from "@/lib/circulars";
 import { formatTimeRange } from "@/components/meetings/meeting-card";
 import { BarList } from "@/components/dashboard/bar-list";
 import { StatTile } from "@/components/dashboard/stat-tile";
@@ -29,7 +30,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const today = new Intl.DateTimeFormat("ar-SA", { dateStyle: "full" }).format(new Date());
   const policy = await getLeavePolicy();
   const { start: dayStart, end: dayEnd } = riyadhDayRange(riyadhDay(new Date()));
-  const [myRequests, approvals, balance, todayMeetings, myTasks] = await Promise.all([
+  const [myRequests, approvals, balance, todayMeetings, myTasks, circulars] = await Promise.all([
     db.request.findMany({
       where: { subjectId: user.id },
       orderBy: { createdAt: "desc" },
@@ -53,6 +54,15 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       orderBy: { dueDate: "asc" },
       take: WIDGET_LIMIT,
       select: { id: true, title: true, dueDate: true, meeting: { select: { title: true } }, createdBy: { select: { name: true } } },
+    }),
+    db.circular.findMany({
+      where: { AND: [visibleWhere(user), activeWhere()] },
+      orderBy: { createdAt: "desc" },
+      take: WIDGET_LIMIT,
+      select: {
+        id: true, title: true, important: true, createdAt: true,
+        recipients: { where: { userId: user.id }, select: { readAt: true } },
+      },
     }),
   ]);
 
@@ -93,7 +103,23 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           ))}
         </Widget>
         <LeaveBalanceCard balance={balance} />
-        <Widget title={t.home.latestCirculars} icon={Megaphone} />
+        <Widget title={t.home.latestCirculars} icon={Megaphone} href="/circulars">
+          {circulars.map((cr) => {
+            const unread = cr.recipients[0] && !cr.recipients[0].readAt;
+            return (
+              <li key={cr.id}>
+                <Link href={`/circulars/${cr.id}`} className="flex items-center justify-between gap-2 py-2 hover:text-brand">
+                  <span>
+                    <span className={`block ${unread ? "font-bold" : "font-medium"}`}>{cr.title}</span>
+                    <span className="text-xs text-muted">{formatDate(cr.createdAt)}</span>
+                  </span>
+                  {cr.important && <span className="rounded-full bg-danger/10 px-2 py-0.5 text-xs text-danger">{t.circulars.important}</span>}
+                  {unread && !cr.important && <span className="rounded-full bg-brand px-2 py-0.5 text-xs text-white">{t.circulars.unread}</span>}
+                </Link>
+              </li>
+            );
+          })}
+        </Widget>
         <Widget title={t.home.todayMeetings} icon={CalendarDays} href="/meetings">
           {todayMeetings.map((mt) => (
             <li key={mt.id}>

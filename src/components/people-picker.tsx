@@ -7,8 +7,8 @@ import { t } from "@/i18n";
 export type Person = { id: string; name: string; departmentId: string | null; jobTitle: string | null };
 type Dept = { id: string; name: string; depth: number };
 
-/** اختيار المدعوين بالبحث أو بإضافة إدارة كاملة. القيم تُرسل كحقول invitees مخفية. */
-export function InviteePicker({ people, departments }: { people: Person[]; departments: Dept[] }) {
+/** اختيار موظفين بالبحث أو بإضافة إدارة كاملة. القيم تُرسل كحقول مخفية باسم name. */
+export function PeoplePicker({ name, people, departments }: { name: string; people: Person[]; departments: Dept[] }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [query, setQuery] = useState("");
   const byId = useMemo(() => new Map(people.map((p) => [p.id, p])), [people]);
@@ -45,14 +45,14 @@ export function InviteePicker({ people, departments }: { people: Person[]; depar
 
       {selected.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          <span className="self-center text-xs text-muted">{t.meetings.selected(selected.length)}</span>
+          <span className="self-center text-xs text-muted">{selected.length}</span>
           {selected.map((id) => (
             <span key={id} className="inline-flex items-center gap-1 rounded-full bg-brand-soft px-3 py-1 text-sm">
               {byId.get(id)?.name}
               <button type="button" aria-label={t.common.delete} onClick={() => setSelected(selected.filter((s) => s !== id))}>
                 <X size={14} />
               </button>
-              <input type="hidden" name="invitees" value={id} />
+              <input type="hidden" name={name} value={id} />
             </span>
           ))}
         </div>
