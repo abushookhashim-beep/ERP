@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { HR_VIEW_ROLES } from "@/lib/hr";
 import { getMeetingForUser } from "@/lib/meetings";
 import { getVisibleRequest } from "@/lib/request-view";
+import { getTicketForUser } from "@/lib/support";
 
 /** يقدّم الملف المرفوع بعد التحقق من أن المستخدم مخوّل برؤيته. */
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -12,14 +13,15 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
 
   const file = await db.storedFile.findUnique({
     where: { id: (await params).id },
-    include: { document: { select: { userId: true } }, request: { select: { id: true } }, meeting: { select: { meetingId: true } } },
+    include: { document: { select: { userId: true } }, request: { select: { id: true } }, meeting: { select: { meetingId: true } }, ticket: { select: { id: true } } },
   });
   if (!file) notFound();
 
   const allowed =
     (file.document && (file.document.userId === user.id || HR_VIEW_ROLES.includes(user.role))) ||
     (file.request && (await getVisibleRequest(file.request.id, user)) !== null) ||
-    (file.meeting && (await getMeetingForUser(file.meeting.meetingId, user.id)) !== null);
+    (file.meeting && (await getMeetingForUser(file.meeting.meetingId, user.id)) !== null) ||
+    (file.ticket && (await getTicketForUser(file.ticket.id, user)) !== null);
   if (!allowed) notFound();
 
   return new Response(new Uint8Array(file.data), {

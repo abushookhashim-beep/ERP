@@ -71,6 +71,32 @@ enum TaskStatus {
   DONE
 }
 
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum TicketCategory {
+  HARDWARE // أجهزة
+  SOFTWARE // برامج
+  NETWORK // شبكة وإنترنت
+  EMAIL // بريد إلكتروني
+  ACCESS // حسابات وصلاحيات
+  PRINTER // طابعات
+  PHONE // اتصالات
+  OTHER
+}
+
+enum TicketStatus {
+  NEW
+  IN_PROGRESS
+  WAITING_USER // بانتظار رد الموظف
+  RESOLVED
+  CLOSED
+}
+
 enum RequestType {
   LEAVE // إجازة
   LETTER // خطاب
@@ -141,8 +167,11 @@ model User {
   organizedMeetings  Meeting[]          @relation("MeetingOrganizer")
   secretaryMeetings  Meeting[]          @relation("MeetingSecretary")
   meetingInvites     MeetingAttendee[]
-  assignedTasks      MeetingTask[]      @relation("TaskAssignee")
-  createdTasks       MeetingTask[]      @relation("TaskCreator")
+  assignedTasks      Task[]             @relation("TaskAssignee")
+  createdTasks       Task[]             @relation("TaskCreator")
+  tickets            Ticket[]           @relation("TicketRequester")
+  assignedTickets    Ticket[]           @relation("TicketAssignee")
+  comments           Comment[]
   documents          EmployeeDocument[]
   uploadedFiles      StoredFile[]
   lastLoginAt        DateTime?
@@ -264,6 +293,7 @@ model StoredFile {
   document     EmployeeDocument?  @relation("DocumentFile")
   request      Request?           @relation("RequestAttachment")
   meeting      MeetingAttachment?
+  ticket       Ticket?            @relation("TicketAttachment")
   createdAt    DateTime           @default(now())
 }
 
@@ -295,7 +325,7 @@ model Meeting {
   minutes           String?
   minutesApprovedAt DateTime?
   attendees         MeetingAttendee[]
-  tasks             MeetingTask[]
+  tasks             Task[]
   attachments       MeetingAttachment[]
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
@@ -328,13 +358,16 @@ model MeetingAttachment {
 }
 
 /**
- * قرار أو توصية من محضر اجتماع، مسندة لشخص.
+ * مهمة مسندة لموظف: من محضر اجتماع أو أسندها موظف مباشرة.
  */
-model MeetingTask {
+model Task {
   id          String     @id @default(cuid())
-  meetingId   String
-  meeting     Meeting    @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  // فارغ للمهام المسندة مباشرة (ليست من اجتماع)
+  meetingId   String?
+  meeting     Meeting?   @relation(fields: [meetingId], references: [id], onDelete: Cascade)
   title       String
+  description String?
+  priority    Priority   @default(NORMAL)
   assigneeId  String
   assignee    User       @relation("TaskAssignee", fields: [assigneeId], references: [id])
   createdById String
@@ -343,8 +376,56 @@ model MeetingTask {
   status      TaskStatus @default(NOT_STARTED)
   note        String?
   completedAt DateTime?
+  comments    Comment[]
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
   @@index([assigneeId, status])
+  @@map("MeetingTask")
+}
+
+/**
+ * تذكرة دعم فني لإدارة تقنية المعلومات.
+ */
+model Ticket {
+  id           String         @id @default(cuid())
+  number       Int            @unique @default(autoincrement())
+  title        String
+  description  String
+  category     TicketCategory
+  priority     Priority       @default(NORMAL)
+  status       TicketStatus   @default(NEW)
+  requesterId  String
+  requester    User           @relation("TicketRequester", fields: [requesterId], references: [id])
+  assigneeId   String?
+  assignee     User?          @relation("TicketAssignee", fields: [assigneeId], references: [id])
+  attachmentId String?        @unique
+  attachment   StoredFile?    @relation("TicketAttachment", fields: [attachmentId], references: [id])
+  comments     Comment[]
+  resolvedAt   DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([status])
+  @@index([requesterId])
+}
+
+/**
+ * تعليق على مهمة أو تذكرة.
+ */
+model Comment {
+  id        String   @id @default(cuid())
+  body      String
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  taskId    String?
+  task      Task?    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  ticketId  String?
+  ticket    Ticket?  @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  // تغيير حالة يُسجل كتعليق نظام
+  isSystem  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([taskId])
+  @@index([ticketId])
 }

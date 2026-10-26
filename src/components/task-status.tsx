@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import type { TaskStatus } from "@prisma/client";
-import { updateTaskStatus } from "@/app/(app)/meetings/actions";
+import { updateTaskStatus } from "@/app/(app)/tasks/actions";
 import { t } from "@/i18n";
 
 export function TaskStatusSelect({ taskId, status, editable }: { taskId: string; status: TaskStatus; editable: boolean }) {

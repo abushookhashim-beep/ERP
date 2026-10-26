@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
   Building2, CalendarDays, CheckSquare, FileText, Home, KeyRound, LogOut, Megaphone, Menu,
-  Users, Wallet, X, Briefcase, Workflow, UserRound, ListTodo, DoorOpen,
+  Users, Wallet, X, Briefcase, Workflow, UserRound, ListTodo, DoorOpen, LifeBuoy,
 } from "lucide-react";
 import type { Role } from "@prisma/client";
 import { logout } from "@/app/login/actions";
@@ -19,6 +19,7 @@ const NAV = [
   { href: "/circulars", label: t.nav.circulars, icon: Megaphone },
   { href: "/meetings", label: t.nav.meetings, icon: CalendarDays },
   { href: "/tasks", label: t.nav.tasks, icon: ListTodo },
+  { href: "/support", label: t.nav.support, icon: LifeBuoy },
   { href: "/hr", label: t.nav.hr, icon: Briefcase, roles: ["ADMIN", "HR", "EXECUTIVE"] },
   { href: "/finance", label: t.nav.finance, icon: Wallet, roles: ["ADMIN", "FINANCE", "EXECUTIVE"] },
 ] satisfies { href: string; label: string; icon: unknown; roles?: Role[] }[];

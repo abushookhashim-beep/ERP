@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { InviteResponse, MeetingMode, TaskStatus } from "@prisma/client";
+import { InviteResponse, MeetingMode } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireRole, requireUser } from "@/lib/auth";
 import { checkFile, storeFile, uploadedFile } from "@/lib/files";
@@ -113,7 +113,7 @@ export async function approveMinutes(meetingId: string, _: FormState, formData: 
         where: { meetingId_userId: { meetingId, userId: a.userId } },
         data: { attended: attended.has(a.userId) },
       })),
-    db.meetingTask.createMany({ data: tasks.map((task) => ({ ...task, meetingId, createdById: user.id })) }),
+    db.task.createMany({ data: tasks.map((task) => ({ ...task, meetingId, createdById: user.id })) }),
     db.meeting.update({
       where: { id: meetingId },
       data: { status: "COMPLETED", minutes: optional(formData.get("minutes")), minutesApprovedAt: new Date() },
@@ -121,18 +121,6 @@ export async function approveMinutes(meetingId: string, _: FormState, formData: 
   ]);
   revalidateMeetings(meetingId);
   return { ok: true };
-}
-
-export async function updateTaskStatus(taskId: string, status: TaskStatus) {
-  const user = await requireUser();
-  // يحدّثها المسؤول عنها، أو من أسندها، أو منظّم الاجتماع
-  await db.meetingTask.updateMany({
-    where: { id: taskId, OR: [{ assigneeId: user.id }, { createdById: user.id }, { meeting: { organizerId: user.id } }] },
-    data: { status, completedAt: status === "DONE" ? new Date() : null },
-  });
-  revalidatePath("/tasks");
-  revalidatePath("/meetings", "layout");
-  revalidatePath("/");
 }
 
 export async function createRoom(_: FormState, formData: FormData): Promise<FormState> {

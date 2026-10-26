@@ -5,7 +5,7 @@ import { requireUser } from "@/lib/auth";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { getMeetingForUser } from "@/lib/meetings";
 import { formatDay, formatTimeRange } from "@/components/meetings/meeting-card";
-import { TaskStatusSelect } from "@/components/meetings/task-status";
+import { TaskStatusSelect } from "@/components/task-status";
 import { t } from "@/i18n";
 import { CancelMeetingButton } from "./cancel-button";
 import { MinutesForm } from "./minutes-form";
@@ -101,7 +101,7 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
                     {mt.tasks.map((task) => (
                       <li key={task.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
                         <span>
-                          <span className="font-medium">{task.title}</span>
+                          <Link href={`/tasks/${task.id}`} className="font-medium hover:text-brand">{task.title}</Link>
                           <span className="text-muted"> · {task.assignee.name}{task.dueDate && ` · ${formatDate(task.dueDate)}`}</span>
                         </span>
                         <TaskStatusSelect taskId={task.id} status={task.status}

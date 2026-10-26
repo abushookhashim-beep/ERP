@@ -48,11 +48,11 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       orderBy: { startsAt: "asc" },
       select: { id: true, title: true, startsAt: true, endsAt: true, room: { select: { name: true } } },
     }),
-    db.meetingTask.findMany({
+    db.task.findMany({
       where: { assigneeId: user.id, status: { not: "DONE" } },
       orderBy: { dueDate: "asc" },
       take: WIDGET_LIMIT,
-      select: { id: true, title: true, dueDate: true, meeting: { select: { title: true } } },
+      select: { id: true, title: true, dueDate: true, meeting: { select: { title: true } }, createdBy: { select: { name: true } } },
     }),
   ]);
 
@@ -107,9 +107,9 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         <Widget title={t.home.myTasks} icon={ListTodo} href="/tasks">
           {myTasks.map((task) => (
             <li key={task.id}>
-              <Link href="/tasks" className="block py-2 hover:text-brand">
+              <Link href={`/tasks/${task.id}`} className="block py-2 hover:text-brand">
                 <span className="block font-medium">{task.title}</span>
-                <span className="text-xs text-muted">{task.meeting.title}{task.dueDate && ` · ${formatDate(task.dueDate)}`}</span>
+                <span className="text-xs text-muted">{task.meeting?.title ?? t.tasks.direct(task.createdBy.name)}{task.dueDate && ` · ${formatDate(task.dueDate)}`}</span>
               </Link>
             </li>
           ))}
