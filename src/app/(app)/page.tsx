@@ -2,7 +2,6 @@ import {
   BellRing, Building2, CalendarDays, CheckCircle2, CheckSquare, Clock, FileText, ListTodo, Megaphone, UserCheck, UserX, Users,
 } from "lucide-react";
 import Link from "next/link";
-import type { Role } from "@prisma/client";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { formatDate, formatDateTime } from "@/lib/format";
@@ -13,12 +12,12 @@ import { alertCount, getHrAlerts } from "@/lib/hr-alerts";
 import { getAnnualBalance, getLeavePolicy } from "@/lib/leave";
 import { participatesWhere, riyadhDay, riyadhDayRange } from "@/lib/meetings";
 import { activeWhere, visibleWhere } from "@/lib/circulars";
+import { can } from "@/lib/permissions";
 import { formatTimeRange } from "@/components/meetings/meeting-card";
 import { BarList } from "@/components/dashboard/bar-list";
 import { StatTile } from "@/components/dashboard/stat-tile";
 import { t } from "@/i18n";
 
-const DASHBOARD_ROLES: Role[] = ["ADMIN", "EXECUTIVE", "HR"];
 const TOP_DEPARTMENTS = 8;
 
 const WIDGET_LIMIT = 5;
@@ -76,7 +75,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         <p className="mt-1 text-sm text-muted">{today}</p>
       </div>
 
-      {DASHBOARD_ROLES.includes(user.role) && <Dashboard alertDays={policy.alertDays} />}
+      {can(user, "dashboard.view") && <Dashboard alertDays={policy.alertDays} />}
 
       <div className="grid gap-4 md:grid-cols-2">
         <Widget title={t.home.myRequests} icon={FileText} href="/requests">
@@ -172,7 +171,7 @@ async function Dashboard({ alertDays }: { alertDays: number }) {
     db.department.findMany({
       select: { name: true, _count: { select: { members: { where: { active: true } } } } },
     }),
-    db.user.groupBy({ by: ["role"], where: { active: true }, _count: true }),
+    db.role.findMany({ select: { name: true, _count: { select: { users: { where: { active: true } } } } } }),
     db.user.findMany({
       orderBy: { createdAt: "desc" },
       take: 5,
@@ -194,7 +193,8 @@ async function Dashboard({ alertDays }: { alertDays: number }) {
   if (rest > 0) departmentRows.push({ label: t.home.others, value: rest });
 
   const roleRows = perRole
-    .map((r) => ({ label: t.roles[r.role], value: r._count }))
+    .map((r) => ({ label: r.name, value: r._count.users }))
+    .filter((r) => r.value > 0)
     .sort((a, b) => b.value - a.value);
 
   return (

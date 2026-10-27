@@ -1,5 +1,6 @@
-import type { ApproverKind, Prisma, RequestType, Role, StepStatus } from "@prisma/client";
+import type { ApproverKind, Prisma, RequestType, StepStatus } from "@prisma/client";
 import { db } from "./db";
+import { can, type Actor } from "./permissions";
 
 /** الأنواع الفرعية لكل نوع طلب. */
 export const SUBTYPES = {
@@ -16,12 +17,6 @@ export const APPROVAL_PATHS: Record<RequestType, ApproverKind[]> = {
   LETTER: ["HR"],
   PLEDGE: ["EMPLOYEE"],
 };
-
-/** من يستطيع إرسال تعهد أو عهدة لموظف. */
-export const PLEDGE_SENDER_ROLES: Role[] = ["ADMIN", "HR", "IT"];
-
-/** من يرى جميع الطلبات. */
-export const ALL_REQUESTS_ROLES: Role[] = ["ADMIN", "HR", "EXECUTIVE"];
 
 export const CEO_SETTING = "ceoUserId";
 
@@ -65,7 +60,6 @@ export async function buildSteps(type: RequestType, subject: { id: string; manag
 }
 
 type StepForCheck = { kind: ApproverKind; approverId: string | null; status: StepStatus };
-type Actor = { id: string; role: Role };
 
 /** هل يستطيع المستخدم اتخاذ إجراء على هذه الخطوة؟ */
 export function canActOnStep(step: StepForCheck, user: Actor, subjectId: string) {
@@ -73,16 +67,16 @@ export function canActOnStep(step: StepForCheck, user: Actor, subjectId: string)
   if (step.approverId) return step.approverId === user.id;
   // خطوة مفتوحة لمجموعة: لا يعتمد الموظف طلبه بنفسه
   if (user.id === subjectId) return false;
-  if (step.kind === "HR") return user.role === "HR";
-  if (step.kind === "CEO") return user.role === "EXECUTIVE";
+  if (step.kind === "HR") return can(user, "requests.approveHr");
+  if (step.kind === "CEO") return can(user, "requests.approveExecutive");
   return false;
 }
 
 /** شرط Prisma لجلب الخطوات المعلقة التي يستطيع المستخدم اعتمادها. */
 export function actionableStepsWhere(user: Actor): Prisma.ApprovalStepWhereInput {
   const pools: Prisma.ApprovalStepWhereInput[] = [];
-  if (user.role === "HR") pools.push({ kind: "HR", approverId: null });
-  if (user.role === "EXECUTIVE") pools.push({ kind: "CEO", approverId: null });
+  if (can(user, "requests.approveHr")) pools.push({ kind: "HR", approverId: null });
+  if (can(user, "requests.approveExecutive")) pools.push({ kind: "CEO", approverId: null });
 
   return {
     status: "PENDING",

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CalendarDays, FileText, ShieldCheck } from "lucide-react";
 import { requireUser } from "@/lib/auth";
-import { PLEDGE_SENDER_ROLES } from "@/lib/requests";
+import { can } from "@/lib/permissions";
 import { t } from "@/i18n";
 
 export default async function NewRequestPage() {
@@ -9,7 +9,7 @@ export default async function NewRequestPage() {
   const options = [
     { href: "/requests/new/leave", title: t.requests.types.LEAVE, hint: t.requests.typeHints.LEAVE, icon: CalendarDays },
     { href: "/requests/new/letter", title: t.requests.types.LETTER, hint: t.requests.typeHints.LETTER, icon: FileText },
-    ...(PLEDGE_SENDER_ROLES.includes(user.role)
+    ...(can(user, "requests.sendPledge")
       ? [{ href: "/requests/new/pledge", title: t.requests.types.PLEDGE, hint: t.requests.typeHints.PLEDGE, icon: ShieldCheck }]
       : []),
   ];

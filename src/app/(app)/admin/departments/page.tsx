@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { requireRole } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { toTree } from "@/lib/departments";
 import { t } from "@/i18n";
 import { DeleteDepartmentButton } from "./delete-button";
 import { DepartmentForm } from "./form";
 
 export default async function DepartmentsPage() {
-  await requireRole("ADMIN");
+  await requirePermission("admin.departments");
   const [departments, users] = await Promise.all([
     db.department.findMany({
       include: { head: true, _count: { select: { members: true, children: true } } },

@@ -4,9 +4,8 @@ import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { Role } from "@prisma/client";
 import { db } from "@/lib/db";
-import { requireRole } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { type FormState, isForeignKeyViolation, isUniqueViolation, optional } from "@/lib/form";
 import { t } from "@/i18n";
 
@@ -27,13 +26,13 @@ const schema = z.object({
   name: z.string().trim().min(1, t.common.required),
   email: z.string().trim().toLowerCase().email(),
   password: z.string().min(8, t.users.passwordShort),
-  role: z.nativeEnum(Role),
+  roleId: z.string().min(1, t.common.required),
   nationalId,
   phone,
 });
 
 export async function createUser(_: FormState, formData: FormData): Promise<FormState> {
-  await requireRole("ADMIN");
+  await requirePermission("admin.users");
   const parsed = schema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const { password, ...data } = parsed.data;
@@ -61,12 +60,13 @@ const updateSchema = schema.omit({ password: true }).extend({
 });
 
 export async function updateUser(id: string, _: FormState, formData: FormData): Promise<FormState> {
-  const admin = await requireRole("ADMIN");
+  const admin = await requirePermission("admin.users");
   const parsed = updateSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const { password, ...data } = parsed.data;
   const active = formData.get("active") === "on";
-  if (id === admin.id && (data.role !== "ADMIN" || !active)) return { error: t.users.cannotDemoteSelf };
+  // لا يغيّر المستخدم دوره أو يوقف حسابه بنفسه، حتى لا يفقد صلاحية الإدارة
+  if (id === admin.id && (data.roleId !== admin.roleId || !active)) return { error: t.users.cannotDemoteSelf };
 
   const managerId = optional(formData.get("managerId"));
   if (managerId && (await reportsTo(managerId, id))) return { error: t.users.invalidManager };
@@ -108,7 +108,7 @@ async function reportsTo(userId: string, targetId: string) {
 }
 
 export async function toggleUserActive(formData: FormData) {
-  const admin = await requireRole("ADMIN");
+  const admin = await requirePermission("admin.users");
   const id = String(formData.get("id"));
   if (id === admin.id) return; // لا يمكن للمدير إيقاف حسابه
   const user = await db.user.findUniqueOrThrow({ where: { id } });
@@ -117,7 +117,7 @@ export async function toggleUserActive(formData: FormData) {
 }
 
 export async function deleteUser(id: string): Promise<FormState> {
-  const admin = await requireRole("ADMIN");
+  const admin = await requirePermission("admin.users");
   if (id === admin.id) return; // لا يمكن للمدير حذف حسابه
   try {
     // من كان هذا المستخدم مديره المباشر أو مدير إدارته يصبح بلا مدير

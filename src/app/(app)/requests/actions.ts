@@ -8,8 +8,9 @@ import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import type { FormState } from "@/lib/form";
 import { optional } from "@/lib/form";
-import { PLEDGE_SENDER_ROLES, SUBTYPES, buildSteps, canActOnStep, inclusiveDays } from "@/lib/requests";
+import { SUBTYPES, buildSteps, canActOnStep, inclusiveDays } from "@/lib/requests";
 import { checkFile, storeFile, uploadedFile } from "@/lib/files";
+import { can } from "@/lib/permissions";
 import { getAnnualBalance, getLeavePolicy, getSickDaysInYear } from "@/lib/leave";
 import { t } from "@/i18n";
 
@@ -114,7 +115,7 @@ const pledgeSchema = z.object({
 
 export async function createPledge(_: FormState, formData: FormData): Promise<FormState> {
   const user = await requireUser();
-  if (!PLEDGE_SENDER_ROLES.includes(user.role)) return { error: t.requests.notAllowed };
+  if (!can(user, "requests.sendPledge")) return { error: t.requests.notAllowed };
   const parsed = pledgeSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const { subtype, subjectId, pledgeTitle, pledgeBody } = parsed.data;

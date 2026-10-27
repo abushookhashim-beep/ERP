@@ -1,11 +1,11 @@
 import { db } from "@/lib/db";
-import { requireRole } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { toggleRoom } from "@/app/(app)/meetings/actions";
 import { t } from "@/i18n";
 import { RoomForm } from "./form";
 
 export default async function RoomsPage() {
-  await requireRole("ADMIN");
+  await requirePermission("admin.rooms");
   const rooms = await db.meetingRoom.findMany({ orderBy: { name: "asc" } });
   const r = t.meetings.roomsAdmin;
 

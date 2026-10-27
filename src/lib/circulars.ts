@@ -1,20 +1,16 @@
 import "server-only";
-import type { Prisma, Role } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { db } from "./db";
+import { can, type Actor } from "./permissions";
 import { descendantIds } from "./departments";
 import { todayDate } from "./hr";
-
-/** يصدرون تعاميم لأي جهة، ويرون كل التعاميم. */
-export const CIRCULAR_ADMIN_ROLES: Role[] = ["ADMIN", "EXECUTIVE", "HR"];
-
-type Actor = { id: string; role: Role };
 
 /**
  * نطاق الإصدار: الأدوار العليا لكل الشركة، ومدير الإدارة لإدارته وما يتبعها.
  * departmentIds فارغة مع full=false تعني لا صلاحية.
  */
 export async function getPublishScope(user: Actor) {
-  if (CIRCULAR_ADMIN_ROLES.includes(user.role)) return { full: true, departmentIds: [] as string[] };
+  if (can(user, "circulars.publishAll")) return { full: true, departmentIds: [] as string[] };
   const headed = await db.department.findMany({ where: { headId: user.id }, select: { id: true } });
   if (headed.length === 0) return { full: false, departmentIds: [] };
   const all = await db.department.findMany({ select: { id: true, parentId: true, sortOrder: true, name: true } });
@@ -39,7 +35,7 @@ export const activeWhere = (): Prisma.CircularWhereInput => ({
 
 /** التعاميم التي يراها المستخدم. */
 export function visibleWhere(user: Actor): Prisma.CircularWhereInput {
-  if (CIRCULAR_ADMIN_ROLES.includes(user.role)) return {};
+  if (can(user, "circulars.viewAll")) return {};
   return { OR: [{ issuerId: user.id }, { recipients: { some: { userId: user.id } } }] };
 }
 
@@ -62,6 +58,6 @@ export async function getCircularForUser(id: string, user: Actor) {
   });
   if (!circular) return null;
   const mine = circular.recipients.find((r) => r.userId === user.id) ?? null;
-  const canTrack = circular.issuerId === user.id || user.role === "ADMIN" || user.role === "EXECUTIVE";
+  const canTrack = circular.issuerId === user.id || can(user, "circulars.trackAll");
   return { circular, mine, canTrack };
 }

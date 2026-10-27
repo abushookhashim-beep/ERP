@@ -1,12 +1,12 @@
 import type { RequestType } from "@prisma/client";
 import { db } from "@/lib/db";
-import { requireRole } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { APPROVAL_PATHS, getCeoId } from "@/lib/requests";
 import { t } from "@/i18n";
 import { ApprovalSettingsForm } from "./form";
 
 export default async function ApprovalSettingsPage() {
-  await requireRole("ADMIN");
+  await requirePermission("admin.approvalSettings");
   const [users, ceoId] = await Promise.all([
     db.user.findMany({ where: { active: true }, orderBy: { name: "asc" }, select: { id: true, name: true } }),
     getCeoId(),

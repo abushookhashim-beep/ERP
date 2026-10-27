@@ -4,7 +4,7 @@ import { FileText } from "lucide-react";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { formatDateTime } from "@/lib/format";
-import { SUPPORT_ROLES, formatTicketNumber, getTicketForUser } from "@/lib/support";
+import { formatTicketNumber, getTicketForUser, supportTeamWhere } from "@/lib/support";
 import { CommentForm } from "@/components/comments/comment-form";
 import { CommentThread } from "@/components/comments/thread";
 import { PriorityBadge } from "@/components/priority-badge";
@@ -21,7 +21,7 @@ export default async function TicketPage({ params }: { params: Promise<{ id: str
   if (!view) notFound();
   const { ticket: tk, isSupport, isRequester } = view;
   const team = isSupport
-    ? await db.user.findMany({ where: { active: true, role: { in: SUPPORT_ROLES } }, orderBy: { name: "asc" }, select: { id: true, name: true } })
+    ? await db.user.findMany({ where: supportTeamWhere, orderBy: { name: "asc" }, select: { id: true, name: true } })
     : [];
 
   const rows: [string, React.ReactNode][] = [

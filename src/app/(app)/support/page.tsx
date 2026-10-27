@@ -4,7 +4,8 @@ import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { formatDateTime } from "@/lib/format";
-import { SUPPORT_ROLES, formatTicketNumber } from "@/lib/support";
+import { can } from "@/lib/permissions";
+import { formatTicketNumber } from "@/lib/support";
 import { PriorityBadge } from "@/components/priority-badge";
 import { TicketStatusBadge } from "@/components/support/ticket-status";
 import { t } from "@/i18n";
@@ -14,7 +15,7 @@ const s = t.support;
 
 export default async function SupportPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const user = await requireUser();
-  const isSupport = SUPPORT_ROLES.includes(user.role);
+  const isSupport = can(user, "support.manage");
   const tabs: { key: Tab; label: string }[] = isSupport
     ? [{ key: "inbox", label: s.inbox }, { key: "assigned", label: s.assignedToMe }, { key: "all", label: s.all }, { key: "mine", label: s.mine }]
     : [{ key: "mine", label: s.mine }];

@@ -1,12 +1,11 @@
 import Link from "next/link";
-import { requireRole } from "@/lib/auth";
-import { HR_EDIT_ROLES } from "@/lib/hr";
+import { requirePermission } from "@/lib/auth";
 import { getLeavePolicy } from "@/lib/leave";
 import { t } from "@/i18n";
 import { PolicyForm } from "./form";
 
 export default async function HrSettingsPage() {
-  await requireRole(...HR_EDIT_ROLES);
+  await requirePermission("hr.policy");
   return (
     <div className="space-y-6">
       <div>

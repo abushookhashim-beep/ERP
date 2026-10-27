@@ -7,7 +7,7 @@ import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { checkFile, storeFile, uploadedFile } from "@/lib/files";
 import { optional, type FormState } from "@/lib/form";
-import { SUPPORT_ROLES, getTicketForUser } from "@/lib/support";
+import { getTicketForUser, supportTeamWhere } from "@/lib/support";
 import { t } from "@/i18n";
 
 const s = t.support;
@@ -70,7 +70,7 @@ export async function manageTicket(ticketId: string, _: FormState, formData: For
   const status = (formData.get("status") as TicketStatus) || ticket.status;
   const assigneeId = formData.has("assigneeId") ? optional(formData.get("assigneeId")) : ticket.assigneeId;
   if (!(status in TicketStatus)) return { error: t.common.required };
-  if (assigneeId && !(await db.user.findFirst({ where: { id: assigneeId, active: true, role: { in: SUPPORT_ROLES } } }))) {
+  if (assigneeId && !(await db.user.findFirst({ where: { id: assigneeId, ...supportTeamWhere } }))) {
     return { error: t.common.required };
   }
 

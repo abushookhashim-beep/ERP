@@ -7,13 +7,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  ADMIN // مدير النظام
-  EXECUTIVE // الإدارة العليا
-  HR // الموارد البشرية
-  FINANCE // المالية
-  IT // تقنية المعلومات
-  EMPLOYEE // موظف
+/**
+ * دور قابل للتعديل من داخل المنصة: اسم + مجموعة صلاحيات (انظر src/lib/permissions.ts).
+ */
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  permissions String[] @default([])
+  // الأدوار الأساسية لا تُحذف
+  system      Boolean  @default(false)
+  users       User[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 enum ContractType {
@@ -163,7 +169,8 @@ model User {
   passwordHash       String
   // يُلزم المستخدم بتغيير كلمة المرور عند الدخول (حساب جديد أو كلمة مرور أعاد المدير تعيينها)
   mustChangePassword Boolean             @default(true)
-  role               Role                @default(EMPLOYEE)
+  roleId             String              @default("role_employee")
+  role               Role                @relation(fields: [roleId], references: [id])
   jobTitle           String?
   phone              String?
   // رقم الهوية الوطنية أو الإقامة (10 أرقام)

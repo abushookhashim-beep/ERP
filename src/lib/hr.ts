@@ -1,10 +1,3 @@
-import type { Role } from "@prisma/client";
-
-/** من يرى ملفات الموظفين. */
-export const HR_VIEW_ROLES: Role[] = ["ADMIN", "HR", "EXECUTIVE"];
-/** من يعدّل ملفات الموظفين ومستنداتهم. */
-export const HR_EDIT_ROLES: Role[] = ["ADMIN", "HR"];
-
 export const DAY_MS = 86_400_000;
 
 /** تاريخ اليوم كتاريخ فقط (منتصف الليل UTC) ليتوافق مع حقول @db.Date. */

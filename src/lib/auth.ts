@@ -2,12 +2,12 @@ import "server-only";
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import type { Role } from "@prisma/client";
 import { db } from "./db";
+import type { Permission } from "./permissions";
 import { SESSION_COOKIE, SESSION_MAX_AGE, signSession, verifySession } from "./session";
 
-export async function createSession(userId: string, role: Role) {
-  const token = await signSession({ userId, role });
+export async function createSession(userId: string) {
+  const token = await signSession({ userId });
   (await cookies()).set(SESSION_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -27,9 +27,9 @@ export const getCurrentUser = cache(async () => {
   if (!session) return null;
   const user = await db.user.findUnique({
     where: { id: session.userId },
-    include: { department: true },
+    include: { department: true, role: { select: { id: true, name: true, permissions: true } } },
   });
-  return user?.active ? user : null;
+  return user?.active ? { ...user, permissions: user.role.permissions } : null;
 });
 
 export async function requireUser() {
@@ -38,8 +38,8 @@ export async function requireUser() {
   return user;
 }
 
-export async function requireRole(...roles: Role[]) {
+export async function requirePermission(permission: Permission) {
   const user = await requireUser();
-  if (!roles.includes(user.role)) redirect("/");
+  if (!user.permissions.includes(permission)) redirect("/");
   return user;
 }

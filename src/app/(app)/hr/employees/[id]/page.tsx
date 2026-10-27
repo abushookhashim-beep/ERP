@@ -2,9 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { EmployeeProfile } from "@prisma/client";
 import { db } from "@/lib/db";
-import { requireRole } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { ACCEPT_ATTR } from "@/lib/files";
-import { HR_EDIT_ROLES, HR_VIEW_ROLES, toDateInput } from "@/lib/hr";
+import { toDateInput } from "@/lib/hr";
+import { can } from "@/lib/permissions";
 import { getAnnualBalance, getLeavePolicy, getSickDaysInYear } from "@/lib/leave";
 import { DocumentsTable } from "@/components/hr/documents-table";
 import { LeaveBalanceCard } from "@/components/hr/leave-balance-card";
@@ -26,7 +27,7 @@ function toValues(p: EmployeeProfile | null): ProfileValues {
 }
 
 export default async function EmployeeProfilePage({ params }: { params: Promise<{ id: string }> }) {
-  const viewer = await requireRole(...HR_VIEW_ROLES);
+  const viewer = await requirePermission("hr.view");
   const { id } = await params;
   const user = await db.user.findUnique({
     where: { id },
@@ -50,7 +51,7 @@ export default async function EmployeeProfilePage({ params }: { params: Promise<
       include: { subject: { select: { name: true } } },
     }),
   ]);
-  const canEdit = HR_EDIT_ROLES.includes(viewer.role);
+  const canEdit = can(viewer, "hr.edit");
 
   return (
     <div className="space-y-6">

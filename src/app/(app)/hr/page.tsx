@@ -2,16 +2,16 @@ import Link from "next/link";
 import { Search, Settings } from "lucide-react";
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
-import { requireRole } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
-import { HR_EDIT_ROLES, HR_VIEW_ROLES } from "@/lib/hr";
+import { can } from "@/lib/permissions";
 import { getHrAlerts } from "@/lib/hr-alerts";
 import { getLeavePolicy } from "@/lib/leave";
 import { AlertsPanel } from "@/components/hr/alerts-panel";
 import { t } from "@/i18n";
 
 export default async function HrPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
-  const user = await requireRole(...HR_VIEW_ROLES);
+  const user = await requirePermission("hr.view");
   const q = (await searchParams).q?.trim() ?? "";
   const where: Prisma.UserWhereInput = q
     ? { OR: [
@@ -40,7 +40,7 @@ export default async function HrPage({ searchParams }: { searchParams: Promise<{
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">{t.hr.title}</h1>
-        {HR_EDIT_ROLES.includes(user.role) && (
+        {can(user, "hr.policy") && (
           <Link href="/hr/settings" className="btn-ghost"><Settings size={16} />{t.hr.settings}</Link>
         )}
       </div>

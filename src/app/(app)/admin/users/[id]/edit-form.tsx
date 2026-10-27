@@ -1,6 +1,5 @@
 "use client";
 
-import type { Role } from "@prisma/client";
 import { updateUser } from "../actions";
 import { t } from "@/i18n";
 import { useFormAction } from "@/lib/use-form-action";
@@ -8,15 +7,16 @@ import { useFormAction } from "@/lib/use-form-action";
 type Option = { id: string; name: string; depth?: number };
 type Props = {
   user: {
-    id: string; employeeNo: string; name: string; email: string; role: Role; active: boolean;
+    id: string; employeeNo: string; name: string; email: string; roleId: string; active: boolean;
     jobTitle: string | null; phone: string | null; nationalId: string | null; departmentId: string | null; managerId: string | null;
   };
   departments: Option[];
   managers: Option[];
+  roles: Option[];
   isSelf: boolean;
 };
 
-export function EditUserForm({ user, departments, managers, isSelf }: Props) {
+export function EditUserForm({ user, departments, managers, roles, isSelf }: Props) {
   const [state, onSubmit, pending] = useFormAction(updateUser.bind(null, user.id));
 
   return (
@@ -28,12 +28,12 @@ export function EditUserForm({ user, departments, managers, isSelf }: Props) {
       <Field name="phone" label={t.users.phone} type="tel" defaultValue={user.phone} ltr placeholder="05XXXXXXXX" />
       <Field name="jobTitle" label={t.users.jobTitle} defaultValue={user.jobTitle} />
       <div>
-        <label className="label" htmlFor="role">{t.users.role}</label>
-        <select id="role" name="role" className="input" defaultValue={user.role} disabled={isSelf}>
-          {Object.entries(t.roles).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        <label className="label" htmlFor="roleId">{t.users.role}</label>
+        <select id="roleId" name="roleId" className="input" defaultValue={user.roleId} disabled={isSelf}>
+          {roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
         </select>
         {/* الحقل المعطّل لا يُرسل مع النموذج */}
-        {isSelf && <input type="hidden" name="role" value={user.role} />}
+        {isSelf && <input type="hidden" name="roleId" value={user.roleId} />}
       </div>
       <div>
         <label className="label" htmlFor="departmentId">{t.users.department}</label>

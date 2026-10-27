@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { HR_VIEW_ROLES } from "@/lib/hr";
+import { can } from "@/lib/permissions";
 import { getMeetingForUser } from "@/lib/meetings";
 import { getVisibleRequest } from "@/lib/request-view";
 import { getTicketForUser } from "@/lib/support";
@@ -19,7 +19,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   if (!file) notFound();
 
   const allowed =
-    (file.document && (file.document.userId === user.id || HR_VIEW_ROLES.includes(user.role))) ||
+    (file.document && (file.document.userId === user.id || can(user, "hr.view"))) ||
     (file.request && (await getVisibleRequest(file.request.id, user)) !== null) ||
     (file.meeting && (await getMeetingForUser(file.meeting.meetingId, user.id)) !== null) ||
     (file.ticket && (await getTicketForUser(file.ticket.id, user)) !== null) ||

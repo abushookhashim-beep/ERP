@@ -1,7 +1,7 @@
 import "server-only";
-import type { Role } from "@prisma/client";
 import { db } from "./db";
-import { ALL_REQUESTS_ROLES, canActOnStep } from "./requests";
+import { can, type Actor } from "./permissions";
+import { canActOnStep } from "./requests";
 
 export type RequestDetails = {
   addressedTo?: string; bankName?: string; iban?: string;
@@ -9,7 +9,7 @@ export type RequestDetails = {
 };
 
 /** يجلب الطلب إذا كان المستخدم مخولاً برؤيته، مع معرفة هل يستطيع اتخاذ إجراء عليه. */
-export async function getVisibleRequest(id: string, user: { id: string; role: Role }) {
+export async function getVisibleRequest(id: string, user: Actor) {
   const request = await db.request.findUnique({
     where: { id },
     include: {
@@ -29,7 +29,7 @@ export async function getVisibleRequest(id: string, user: { id: string; role: Ro
     request.subjectId === user.id ||
     request.createdById === user.id ||
     request.steps.some((s) => s.approverId === user.id) ||
-    ALL_REQUESTS_ROLES.includes(user.role);
+    can(user, "requests.viewAll");
   if (!involved && !canAct) return null;
 
   return { request, canAct, details: request.details as RequestDetails };

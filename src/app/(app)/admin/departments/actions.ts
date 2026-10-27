@@ -3,13 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { requireRole } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { descendantIds } from "@/lib/departments";
 import { type FormState, isUniqueViolation, optional } from "@/lib/form";
 import { t } from "@/i18n";
 
 export async function createDepartment(_: FormState, formData: FormData): Promise<FormState> {
-  await requireRole("ADMIN");
+  await requirePermission("admin.departments");
   const name = optional(formData.get("name"));
   if (!name) return { error: t.common.required };
 
@@ -30,7 +30,7 @@ export async function createDepartment(_: FormState, formData: FormData): Promis
 }
 
 export async function updateDepartment(id: string, _: FormState, formData: FormData): Promise<FormState> {
-  await requireRole("ADMIN");
+  await requirePermission("admin.departments");
   const name = optional(formData.get("name"));
   if (!name) return { error: t.common.required };
   const parentId = optional(formData.get("parentId"));
@@ -54,7 +54,7 @@ export async function updateDepartment(id: string, _: FormState, formData: FormD
 }
 
 export async function deleteDepartment(id: string): Promise<FormState> {
-  await requireRole("ADMIN");
+  await requirePermission("admin.departments");
   const counts = await db.department.findUniqueOrThrow({
     where: { id },
     select: { _count: { select: { members: true, children: true } } },

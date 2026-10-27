@@ -3,7 +3,7 @@ import { Plus, Send } from "lucide-react";
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
-import { ALL_REQUESTS_ROLES, PLEDGE_SENDER_ROLES } from "@/lib/requests";
+import { can } from "@/lib/permissions";
 import { RequestTable } from "@/components/requests/request-table";
 import { t } from "@/i18n";
 
@@ -11,8 +11,8 @@ type Tab = "mine" | "sent" | "all";
 
 export default async function RequestsPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const user = await requireUser();
-  const canSend = PLEDGE_SENDER_ROLES.includes(user.role);
-  const canSeeAll = ALL_REQUESTS_ROLES.includes(user.role);
+  const canSend = can(user, "requests.sendPledge");
+  const canSeeAll = can(user, "requests.viewAll");
 
   const tabs: { key: Tab; label: string }[] = [
     { key: "mine", label: t.requests.myRequests },

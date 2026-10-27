@@ -3,10 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { ContractType, DocumentType, Gender, MaritalStatus } from "@prisma/client";
 import { db } from "@/lib/db";
-import { requireRole } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { checkFile, storeFile, uploadedFile } from "@/lib/files";
 import { optional, type FormState } from "@/lib/form";
-import { HR_EDIT_ROLES, dateInput } from "@/lib/hr";
+import { dateInput } from "@/lib/hr";
 import { DEFAULT_LEAVE_POLICY, LEAVE_POLICY_SETTING, type LeavePolicy } from "@/lib/leave";
 import { t } from "@/i18n";
 
@@ -21,7 +21,7 @@ const money = (v: FormDataEntryValue | null) => {
 };
 
 export async function saveProfile(userId: string, _: FormState, formData: FormData): Promise<FormState> {
-  await requireRole(...HR_EDIT_ROLES);
+  await requirePermission("hr.edit");
   const f = (k: string) => formData.get(k);
 
   const amounts = {
@@ -59,7 +59,7 @@ export async function saveProfile(userId: string, _: FormState, formData: FormDa
 }
 
 export async function addDocument(userId: string, _: FormState, formData: FormData): Promise<FormState> {
-  const actor = await requireRole(...HR_EDIT_ROLES);
+  const actor = await requirePermission("hr.edit");
   const type = enumValue(DocumentType, formData.get("type"));
   if (!type) return { error: t.common.required };
 
@@ -86,7 +86,7 @@ export async function addDocument(userId: string, _: FormState, formData: FormDa
 }
 
 export async function deleteDocument(documentId: string) {
-  await requireRole(...HR_EDIT_ROLES);
+  await requirePermission("hr.edit");
   const doc = await db.employeeDocument.delete({ where: { id: documentId } });
   if (doc.fileId) await db.storedFile.delete({ where: { id: doc.fileId } });
   revalidatePath(`/hr/employees/${doc.userId}`);
@@ -94,7 +94,7 @@ export async function deleteDocument(documentId: string) {
 }
 
 export async function saveLeavePolicy(_: FormState, formData: FormData): Promise<FormState> {
-  await requireRole(...HR_EDIT_ROLES);
+  await requirePermission("hr.policy");
   const policy = {} as LeavePolicy;
   for (const key of Object.keys(DEFAULT_LEAVE_POLICY) as (keyof LeavePolicy)[]) {
     const n = Number(formData.get(key));

@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { requireRole } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { descendantIds, toTree } from "@/lib/departments";
 import { t } from "@/i18n";
 import { EditDepartmentForm } from "./edit-form";
 
 export default async function EditDepartmentPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireRole("ADMIN");
+  await requirePermission("admin.departments");
   const { id } = await params;
   const [departments, users] = await Promise.all([
     db.department.findMany(),

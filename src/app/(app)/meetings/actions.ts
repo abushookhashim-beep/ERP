@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { InviteResponse, MeetingMode } from "@prisma/client";
 import { db } from "@/lib/db";
-import { requireRole, requireUser } from "@/lib/auth";
+import { requirePermission, requireUser } from "@/lib/auth";
 import { checkFile, storeFile, uploadedFile } from "@/lib/files";
 import { isUniqueViolation, optional, type FormState } from "@/lib/form";
 import { dateInput } from "@/lib/hr";
@@ -124,7 +124,7 @@ export async function approveMinutes(meetingId: string, _: FormState, formData: 
 }
 
 export async function createRoom(_: FormState, formData: FormData): Promise<FormState> {
-  await requireRole("ADMIN");
+  await requirePermission("admin.rooms");
   const name = optional(formData.get("name"));
   if (!name) return { error: t.common.required };
   const capacity = Number(formData.get("capacity")) || null;
@@ -139,7 +139,7 @@ export async function createRoom(_: FormState, formData: FormData): Promise<Form
 }
 
 export async function toggleRoom(formData: FormData) {
-  await requireRole("ADMIN");
+  await requirePermission("admin.rooms");
   const id = String(formData.get("id"));
   const room = await db.meetingRoom.findUniqueOrThrow({ where: { id } });
   await db.meetingRoom.update({ where: { id }, data: { active: !room.active } });

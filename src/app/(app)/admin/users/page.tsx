@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { requireRole } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { toTree } from "@/lib/departments";
 import { t } from "@/i18n";
 import { toggleUserActive } from "./actions";
@@ -8,17 +8,18 @@ import { DeleteUserButton } from "./delete-button";
 import { UserForm } from "./form";
 
 export default async function UsersPage() {
-  const admin = await requireRole("ADMIN");
-  const [users, departments] = await Promise.all([
-    db.user.findMany({ orderBy: { employeeNo: "asc" }, include: { department: true, manager: true } }),
+  const admin = await requirePermission("admin.users");
+  const [users, departments, roles] = await Promise.all([
+    db.user.findMany({ orderBy: { employeeNo: "asc" }, include: { department: true, manager: true, role: { select: { name: true } } } }),
     db.department.findMany({ select: { id: true, name: true, parentId: true, sortOrder: true } }),
+    db.role.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
   ]);
   const activeUsers = users.filter((u) => u.active).map(({ id, name }) => ({ id, name }));
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">{t.users.title}</h1>
-      <UserForm departments={toTree(departments).map(({ id, name, depth }) => ({ id, name, depth }))} users={activeUsers} />
+      <UserForm departments={toTree(departments).map(({ id, name, depth }) => ({ id, name, depth }))} users={activeUsers} roles={roles} />
       <div className="card overflow-x-auto p-0">
         <table className="w-full text-sm">
           <thead className="border-b border-border text-muted">
@@ -40,7 +41,7 @@ export default async function UsersPage() {
                 <td className="p-3">{u.jobTitle ?? t.common.none}</td>
                 <td className="p-3">{u.department?.name ?? t.common.none}</td>
                 <td className="p-3">{u.manager?.name ?? t.common.none}</td>
-                <td className="p-3">{t.roles[u.role]}</td>
+                <td className="p-3">{u.role.name}</td>
                 <td className="p-3">
                   <span className={`rounded-full px-2 py-0.5 text-xs ${u.active ? "bg-brand-soft text-brand" : "bg-border text-muted"}`}>
                     {u.active ? t.common.active : t.common.inactive}

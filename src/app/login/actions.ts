@@ -24,7 +24,7 @@ export async function login(_: LoginState, formData: FormData): Promise<LoginSta
   if (!user || !ok) return { error: t.login.invalid, email };
 
   await db.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
-  await createSession(user.id, user.role);
+  await createSession(user.id);
   redirect("/");
 }
 

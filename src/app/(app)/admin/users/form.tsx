@@ -4,10 +4,11 @@ import { useEffect, useRef } from "react";
 import { createUser } from "./actions";
 import { t } from "@/i18n";
 import { useFormAction } from "@/lib/use-form-action";
+import { DEFAULT_ROLE_ID } from "@/lib/permissions";
 
 type Option = { id: string; name: string; depth?: number };
 
-export function UserForm({ departments, users }: { departments: Option[]; users: Option[] }) {
+export function UserForm({ departments, users, roles }: { departments: Option[]; users: Option[]; roles: Option[] }) {
   const [state, onSubmit, pending] = useFormAction(createUser);
   const form = useRef<HTMLFormElement>(null);
   useEffect(() => { if (state?.ok) form.current?.reset(); }, [state]);
@@ -22,9 +23,9 @@ export function UserForm({ departments, users }: { departments: Option[]; users:
       <Field name="phone" label={t.users.phone} type="tel" ltr placeholder="05XXXXXXXX" />
       <Field name="jobTitle" label={t.users.jobTitle} />
       <div>
-        <label className="label" htmlFor="role">{t.users.role}</label>
-        <select id="role" name="role" className="input" defaultValue="EMPLOYEE">
-          {Object.entries(t.roles).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        <label className="label" htmlFor="roleId">{t.users.role}</label>
+        <select id="roleId" name="roleId" className="input" defaultValue={DEFAULT_ROLE_ID}>
+          {roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
         </select>
       </div>
       <div>

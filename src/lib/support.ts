@@ -1,11 +1,11 @@
 import "server-only";
-import type { Role } from "@prisma/client";
 import { db } from "./db";
+import { can, type Actor } from "./permissions";
 
-/** من يعالج تذاكر الدعم الفني. */
-export const SUPPORT_ROLES: Role[] = ["IT", "ADMIN"];
+/** الفريق الذي يعالج التذاكر: كل من يملك صلاحية support.manage. */
+export const supportTeamWhere = { active: true, role: { permissions: { has: "support.manage" } } };
 
-export async function getTicketForUser(id: string, user: { id: string; role: Role }) {
+export async function getTicketForUser(id: string, user: Actor) {
   const ticket = await db.ticket.findUnique({
     where: { id },
     include: {
@@ -16,7 +16,7 @@ export async function getTicketForUser(id: string, user: { id: string; role: Rol
     },
   });
   if (!ticket) return null;
-  const isSupport = SUPPORT_ROLES.includes(user.role);
+  const isSupport = can(user, "support.manage");
   const isRequester = ticket.requesterId === user.id;
   if (!isSupport && !isRequester) return null;
   return { ticket, isSupport, isRequester };
